@@ -1,8 +1,11 @@
 # Ingress와 Load Balancer에서 TLS를 강제한다
 
 > **Phase:** Quick Wins
+>
 > **보안 영역:** 네트워크 보안
+>
 > **담당:** 공통 (전체 실습)
+>
 > **난이도:** ★☆☆
 
 ---
