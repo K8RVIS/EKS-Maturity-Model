@@ -47,7 +47,7 @@ spec:
 - AWS Load Balancer Controller를 사용하는 경우 컨트롤러 설치와 IngressClass 구성이 완료되어 있어야 한다.
 - ACM 인증서를 발급하거나 가져올 수 있는 IAM 권한이 있어야 한다.
 - ALB 또는 NLB를 수정할 수 있는 권한이 있어야 한다.
-- 인증서와 Load Balancer는 같은 리전에 있어야 한다.\
+- 인증서와 Load Balancer는 같은 리전에 있어야 한다.
 
 ### Step 1: 현재 Ingress와 Load Balancer 노출 상태를 확인한다
 
