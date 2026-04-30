@@ -107,15 +107,15 @@ spec:
 
 핵심 필드는 다음과 같이 이해하면 된다.
 
-| 필드 | 목적 |
-| --- | --- |
-| `runAsNonRoot: true` | UID 0으로 실행되는 컨테이너 시작을 거부 |
-| `runAsUser: 10001` | 컨테이너 프로세스 실행 UID를 명시 |
-| `runAsGroup: 10001` | 컨테이너 프로세스 실행 GID를 명시 |
-| `readOnlyRootFilesystem: true` | 컨테이너 루트 파일시스템 쓰기 차단 |
-| `allowPrivilegeEscalation: false` | setuid, setgid 등을 통한 권한 상승 차단 |
-| `capabilities.drop: ["ALL"]` | 기본 Linux capability를 제거해 공격면 축소 |
-| `seccompProfile.type: RuntimeDefault` | 런타임 기본 seccomp 프로필 적용 |
+| 필드                                  | 목적                                       |
+| ------------------------------------- | ------------------------------------------ |
+| `runAsNonRoot: true`                  | UID 0으로 실행되는 컨테이너 시작을 거부    |
+| `runAsUser: 10001`                    | 컨테이너 프로세스 실행 UID를 명시          |
+| `runAsGroup: 10001`                   | 컨테이너 프로세스 실행 GID를 명시          |
+| `readOnlyRootFilesystem: true`        | 컨테이너 루트 파일시스템 쓰기 차단         |
+| `allowPrivilegeEscalation: false`     | setuid, setgid 등을 통한 권한 상승 차단    |
+| `capabilities.drop: ["ALL"]`          | 기본 Linux capability를 제거해 공격면 축소 |
+| `seccompProfile.type: RuntimeDefault` | 런타임 기본 seccomp 프로필 적용            |
 
 **Step 3: 쓰기가 필요한 경로만 별도 볼륨으로 분리한다**
 
@@ -169,9 +169,23 @@ spec:
 
 외부 공개용 샘플에서는 root로 80 포트에 바인딩하는 이미지보다, 8080 등 비특권 포트를 사용하는 non-root 이미지를 선택하는 편이 단순하다.
 
-**Step 4: Pod Security Admission으로 재발을 방지한다**
+**Step 4: eks-secure-infra에 수동으로 반영한다**
 
-개별 Deployment를 수정하는 것만으로는 새 워크로드가 다시 root로 배포되는 것을 막기 어렵다. 네임스페이스에는 Kubernetes Pod Security Admission을 적용해 `restricted` 기준을 강제하거나, 먼저 `warn`/`audit`로 영향도를 확인한 뒤 `enforce`로 전환한다.
+현재 저장소 기준으로는 [deployment.yaml](/Users/esc/Desktop/K8RVIS/eks-secure-infra/manifests/base/web/deployment.yaml:25)의 `web` Deployment가 가장 직접적인 적용 포인트다.
+
+권장 반영 순서는 다음과 같다.
+
+1. `nginx:1.27.5` 이미지가 root 실행과 80 포트 바인딩에 의존하는지 확인한다.
+2. 실습 목적상 안전한 기준선을 만들려면 `nginxinc/nginx-unprivileged` 같은 non-root 지원 이미지를 사용하거나, 자체 Dockerfile에서 non-root 사용자와 비특권 포트를 구성한다.
+3. `runAsNonRoot: true`, `runAsUser`/`runAsGroup`에 0이 아닌 UID/GID를 명시한다.
+4. 컨테이너 `securityContext`에 `readOnlyRootFilesystem: true`, `allowPrivilegeEscalation: false`, `capabilities.drop: ["ALL"]`을 추가한다.
+5. 쓰기가 필요한 경로만 `emptyDir`로 열고, 서비스 포트와 컨테이너 포트를 함께 조정한다.
+
+**추가 보안 강화 요소: Pod Security Admission으로 재발을 방지한다**
+
+개별 Deployment를 수정하는 것만으로는 새 워크로드가 다시 root로 배포되는 것을 막기 어렵다. 따라서 네임스페이스에 Kubernetes Pod Security Admission을 적용해 `restricted` 기준을 강제하거나, 먼저 `warn`/`audit`로 영향도를 확인한 뒤 `enforce`로 전환하는 방식을 적용할 수 있다.
+
+이를 통해 보안 기준을 미준수하는 Pod는 실행 자체가 거부되도록 강제하여, 클러스터 전반의 보안을 원천적으로 한 단계 더 강화할 수 있다.
 
 ```bash
 # 영향도 확인 단계
@@ -189,17 +203,38 @@ kubectl label namespace team-a \
 
 운영 환경에서는 컨트롤러, CNI, CSI, 관측 도구처럼 특권이 필요한 시스템 워크로드를 애플리케이션 네임스페이스와 분리하고, 예외 네임스페이스는 별도 기준으로 관리해야 한다.
 
-**Step 5: eks-secure-infra에 수동으로 반영한다**
+**자동화 스크립트를 이용한 일괄 보안 패치(Advanced)**
 
-현재 저장소 기준으로는 [deployment.yaml](/Users/esc/Desktop/K8RVIS/eks-secure-infra/manifests/base/web/deployment.yaml:25)의 `web` Deployment가 가장 직접적인 적용 포인트다.
+운영 환경에서는 관리해야 할 매니페스트 파일이 매우 많은 경우 활용하면 효율적인 방법이다. 팀 내에서 개발된 스크립트를 활용하면 manifests 디렉터리 내의 모든 YAML 파일을 검사하고 보안 설정을 자동 적용할 수 있다.
 
-권장 반영 순서는 다음과 같다.
+스크립트의 주요 기능
 
-1. `nginx:1.27.5` 이미지가 root 실행과 80 포트 바인딩에 의존하는지 확인한다.
-2. 실습 목적상 안전한 기준선을 만들려면 `nginxinc/nginx-unprivileged` 같은 non-root 지원 이미지를 사용하거나, 자체 Dockerfile에서 non-root 사용자와 비특권 포트를 구성한다.
-3. `runAsNonRoot: true`, `runAsUser`/`runAsGroup`에 0이 아닌 UID/GID를 명시한다.
-4. 컨테이너 `securityContext`에 `readOnlyRootFilesystem: true`, `allowPrivilegeEscalation: false`, `capabilities.drop: ["ALL"]`을 추가한다.
-5. 쓰기가 필요한 경로만 `emptyDir`로 열고, 서비스 포트와 컨테이너 포트를 함께 조정한다.
+- 보안 컨텍스트 자동 주입: runAsNonRoot: true, runAsUser: 1000, readOnlyRootFilesystem: true 설정을 워크로드(Deployment, StatefulSet 등)에 일괄 적용한다.
+
+- 위험 감지: Nginx 이미지 사용 시 포트 80(권한 필요) 사용 여부나 /data 경로 마운트 시 권한 문제(fsGroup 필요성)를 감지하여 경고를 출력한다.
+
+- 권한 상승 방지: 볼륨 마운트가 감지될 경우 자동으로 fsGroup 설정을 추가하여 권한 문제를 사전에 방지한다.
+
+**사용 방법**
+
+1. 드라이 런 (검토 모드): 실제 파일을 수정하지 않고 어떤 부분이 변경되어야 하는지, 수동 확인이 필요한 지점은 어디인지 출력한다.
+
+```bash
+python harden_manifests.py --manifests-dir ./manifests
+```
+
+2. 실제 적용: --write 옵션을 추가하여 매니페스트 파일에 보안 설정을 직접 반영한다.
+
+```bash
+python harden_manifests.py --manifests-dir ./manifests --write
+```
+
+**자동화 적용 시 주의사항**
+스크립트 실행 후 다음과 같은 항목은 반드시 사람이 직접 확인해야 한다.
+
+- 포트 변경 확인: 기존 포트 80을 사용하던 Nginx 등이 8080으로 변경될 경우, 이와 연결된 Service의 targetPort도 함께 수정되었는지 확인이 필요하다.
+
+- 쓰기 경로 볼륨 분리: readOnlyRootFilesystem: true로 인해 쓰기가 차단된 경로가 애플리케이션 실행에 필수적인 경우, 스크립트가 제안하는 emptyDir 마운트가 적절히 이루어졌는지 검증해야 한다.
 
 #### 검증 방법
 

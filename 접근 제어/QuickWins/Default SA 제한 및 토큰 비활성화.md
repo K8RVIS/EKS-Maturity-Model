@@ -21,11 +21,12 @@ Kubernetes에서 `ServiceAccount(SA)`는 Pod가 Kubernetes API 서버에 자신�
 - 애플리케이션이 Kubernetes API를 전혀 사용하지 않아도 토큰이 Pod 안에 들어간다.
 - 공격자가 웹 취약점이나 RCE를 통해 Pod 내부에 진입하면, 마운트된 토큰을 읽어 Kubernetes API 호출을 시도할 수 있다.
 - `default` SA에 관리 편의를 이유로 추가 권한이 바인딩되어 있으면, 해당 네임스페이스의 모든 Pod가 같은 권한을 공유하는 구조가 된다.
-- 어떤 워크로드가 어떤 권한으로 API를 사용하는지 추적하기 어려워져 감사와 권한 리뷰가 어려워진다.
+- 모든 Pod가 default를 공유하면, 어떤 워크로드가 어떤 권한으로 API를 사용하는지 추적하기 어려워져 감사와 권한 리뷰가 어려워진다.
 
-`default` SA 자체가 항상 강력한 권한을 가지는 것은 아니다. 일반적으로는 제한적인 discovery 수준의 기본 권한만 갖지만, 운영 과정에서 `RoleBinding`이나 `ClusterRoleBinding`이 추가되면 위험도가 급격히 높아진다. 따라서 보안적으로는 `default` SA를 워크로드 실행 계정으로 적극 사용하지 않고, 꼭 필요한 워크로드에만 전용 SA를 분리하는 것이 바람직하다.
+`default` SA 자체가 항상 강력한 권한을 가지는 것은 아니다. 일반적으로는 제한적인 discovery 수준의 기본 권한만 갖지만, 운영 과정에서 `RoleBinding`이나 `ClusterRoleBinding`이 추가되면 위험도가 급격히 높아진다. 해당 네임스페이스 내의 모든 파드가 그 권한을 공유하게 되기 때문이다.
+따라서 보안적으로는 `default` SA를 워크로드 실행 계정으로 적극 사용하지 않고, 꼭 필요한 워크로드에만 전용 SA를 분리하는 것이 바람직하다.
 
-EKS에서도 원칙은 같다. 특히 EKS는 IRSA나 Pod Identity처럼 워크로드별 권한 분리가 중요한 환경이므로, `default` SA를 계속 사용하면 Kubernetes 권한과 AWS 권한 설계를 함께 흐리게 만들 수 있다.
+EKS에서도 원칙은 같다. 특히 EKS는 IRSA나 Pod Identity처럼 워크로드별 권한 분리가 중요한 환경이므로, `default` SA를 계속 사용하면 Kubernetes의 RBAC 경계와 AWS의 IAM 보안 경계를 모호하게 만들어, '최소 권한 원칙'의 적용을 불가능하게 만들 수 있다.
 
 현재 `eks-secure-infra` 실습 환경의 insecure baseline에서도 이 위험을 확인할 수 있다. [deployment.yaml](/Users/esc/Desktop/K8RVIS/eks-secure-infra/manifests/base/api/deployment.yaml:19)에는 아래와 같이 `api` 워크로드가 `default` SA와 자동 토큰 마운트를 사용하도록 설정되어 있다.
 
@@ -236,7 +237,7 @@ kubectl exec -n team-a deploy/api -- ls /var/run/secrets/kubernetes.io/serviceac
 
 - [AWS EKS Best Practices - Identity and Access Management](https://aws.github.io/aws-eks-best-practices/security/docs/iam/)
 - [Kubernetes - Configure Service Accounts for Pods](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/)
-- [CIS Amazon EKS Benchmark v1.8.0](./CIS_Amazon_Elastic_Kubernetes_Service_(EKS)_v.1.8.0_PDF.md)
+- [CIS Amazon EKS Benchmark v1.8.0](<./CIS_Amazon_Elastic_Kubernetes_Service_(EKS)_v.1.8.0_PDF.md>)
 - [CIS Kubernetes Benchmark v1.12.0](./CIS_Kubernetes_Benchmark_V1.12.0_PDF.md)
 - [NSA/CISA Kubernetes Hardening Guidance](./CTR_KUBERNETES_HARDENING_GUIDANCE_1.2_20220829.md)
 
@@ -282,3 +283,17 @@ kubectl exec -n team-a deploy/api -- ls /var/run/secrets/kubernetes.io/serviceac
 - [ ] Kubernetes API 접근이 필요한 워크로드만 전용 ServiceAccount를 사용하고 있는가?
 - [ ] API 접근이 필요 없는 워크로드에는 `automountServiceAccountToken: false`가 적용되어 있는가?
 - [ ] `eks-secure-infra`의 `api` 워크로드가 `default` SA 대신 전용 SA를 사용하도록 수정되었는가?
+
+#### 대규모 환경을 위한 patch 자동화 방안
+
+관리해야 할 리소스가 수백 개 이상인 대규모 클러스터 환경에서는 사람이 일일이 매니페스트를 수정하기 어렵고 누락이 발생할 위험이 크다.
+
+이를 보완하기 위해, **현재 클러스터 내에서 여전히 default SA를 사용 중인 리소스를 자동으로 식별하고 패치를 생성하는 스크립트 기반의 접근 방식을 병행**하여 사용할 수 있다.
+
+**자동화 스크립트의 작동 원리 및 특징**
+
+- **렌더링 결과 기반 탐색**: kustomization.yaml의 실제 렌더링 결과(Overlay)를 기준으로 리소스를 분석한다.
+
+- **타겟팅 패치**: 이미 전용 SA를 명시하여 사용 중인 워크로드(의도적으로 권한을 부여한 대상)는 제외하고, 명시적 설정이 없어 K8s 기본 동작에 의해 default SA가 할당된 리소스만 선별하여 패치 대상으로 선정한다.
+
+- **Kustomize 연동**: 식별된 대상에 대해서만 automountServiceAccountToken: false를 적용하는 default-sa-token-patch.yaml을 동적으로 생성하여, Kustomize 파이프라인에 자동으로 포함시킨다.
