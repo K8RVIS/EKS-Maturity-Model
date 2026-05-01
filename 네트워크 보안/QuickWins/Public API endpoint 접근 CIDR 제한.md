@@ -102,7 +102,7 @@ Private Endpoint를 함께 켜면 VPC 내부의 노드와 운영 자동화는 Pr
 aws eks update-cluster-config \
   --region "${AWS_REGION}" \
   --name "${CLUSTER_NAME}" \
-  --resources-vpc-config endpointPublicAccess=true,endpointPrivateAccess=true,publicAccessCidrs="<개인-IP>/32"
+  --resources-vpc-config endpointPublicAccess=true,endpointPrivateAccess=true,publicAccessCidrs="203.0.113.5/32"
 ```
 
 여러 출발지를 허용해야 한다면 콤마로 구분한다.
@@ -111,7 +111,7 @@ aws eks update-cluster-config \
 aws eks update-cluster-config \
   --region "${AWS_REGION}" \
   --name "${CLUSTER_NAME}" \
-  --resources-vpc-config endpointPublicAccess=true,endpointPrivateAccess=true,publicAccessCidrs="<개인-IP>/32,198.51.100.10/32"
+  --resources-vpc-config endpointPublicAccess=true,endpointPrivateAccess=true,publicAccessCidrs="203.0.113.5/32,198.51.100.10/32"
 ```
 
 운영 중인 노드나 Fargate Pod가 Public Endpoint로 API 서버에 접근하는 구조라면 주의해야 한다.
@@ -158,7 +158,7 @@ resource "aws_eks_cluster" "this" {
 
 ```hcl
 cluster_public_access_cidrs = [
-  "<개인-IP>/32",    # VPN egress
+  "203.0.113.5/32",    # VPN egress
   "198.51.100.10/32",  # operations bastion
 ]
 ```
@@ -203,7 +203,7 @@ aws eks describe-cluster \
   "endpointPublicAccess": true,
   "endpointPrivateAccess": true,
   "publicAccessCidrs": [
-    "<개인-IP>/32",
+    "203.0.113.5/32",
     "198.51.100.10/32"
   ]
 }
