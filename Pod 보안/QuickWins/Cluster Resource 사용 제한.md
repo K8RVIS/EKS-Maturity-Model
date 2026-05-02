@@ -10,15 +10,17 @@
 
 ---
 
-#### 왜 필요한가
+## 왜 필요한가
 
 Kubernetes 클러스터는 여러 팀과 서비스가 같은 노드 풀, API 서버, 스케줄러, kubelet 자원을 공유한다. 특정 Pod가 CPU를 과도하게 사용하거나 메모리 누수로 계속 확장되면 해당 Pod만 느려지는 것이 아니라 같은 노드의 다른 Pod까지 지연, 재시작, OOMKilled 상태로 이어질 수 있다. 이런 "noisy neighbor" 문제는 악의적인 DoS가 아니어도 잘못된 배포 설정이나 무한 루프만으로 발생한다.
 
 EKS에서도 기본 동작은 같다. 네임스페이스에 `ResourceQuota`가 없으면 팀별 총 사용량 상한이 없고, Pod나 컨테이너에 `resources.requests`와 `resources.limits`가 없으면 스케줄러가 필요한 용량을 정확히 계산하기 어렵다. 그 결과 한 팀의 테스트 워크로드가 노드 자원을 잠식하거나, HPA와 Cluster Autoscaler가 예측하기 어려운 방향으로 동작할 수 있다.
 
+현재 `eks-vulnerable-infra` 실습 기준선에서도 이 위험을 확인할 수 있다. [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/web/deployment.yaml)과 [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/web/deployment.yaml)은 컨테이너에 CPU/Memory request와 limit을 지정하지 않는다. [statefulset.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/db/statefulset.yaml)은 PVC storage request만 있고 컨테이너 CPU/Memory 제한은 없다.
+
 팀이 각자 `requests`와 `limits`를 잘 설정하도록 권장하는 것만으로는 충분하지 않다. 사람은 설정을 쉽게 누락하고, 반대로 특정 팀이 지나치게 큰 request/limit을 선언하면 클러스터의 공용 자원을 과도하게 점유할 수 있다. 따라서 워크로드 매니페스트에는 서비스별 값을 명시하되, 클러스터 운영자는 네임스페이스 레벨의 `ResourceQuota`와 `LimitRange`로 최소한의 강제선을 함께 둬야 한다.
 
-#### 수행 방법
+## 수행 방법
 
 **사전 조건**
 
@@ -162,7 +164,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: nginx:1.28-alpine
+          image: nginx:1.27.5
           resources:
             requests:
               cpu: 100m
@@ -177,8 +179,28 @@ spec:
 > **참고: Kustomize overlay 방식**
 >
 > Terraform 모듈 대신 각 팀 overlay에 직접 `ResourceQuota`와 `LimitRange` 매니페스트를 두는 방식도 가능하다. `manifests/overlays/<namespace>/resource-controls.yaml`을 생성하고 `kustomization.yaml`에 포함하면 된다. 이 방식은 팀마다 다른 quota 값을 독립적으로 유지할 수 있고 변경이 워크로드 매니페스트와 같은 레이어에서 관리된다. 다만 `kubectl delete`로 직접 삭제하면 다음 GitOps 동기화 전까지 공백이 생길 수 있어, Terraform 방식보다 우회가 쉽다.
+>
+> **Terraform 방식 vs Kustomize overlay 방식 비교**
 
-#### 검증 방법
+ResourceQuota와 LimitRange를 적용하는 방식은 크게 두 가지다. 환경과 운영 정책에 따라 선택하거나 혼용할 수 있다.
+
+| 항목 | Terraform 방식 | Kustomize overlay 방식 |
+| --- | --- | --- |
+| 적용 위치 | `modules/namespaces/main.tf` | `manifests/overlays/<namespace>/resource-controls.yaml` |
+| 적용 방법 | `terraform apply` | `kubectl apply` / GitOps 동기화 |
+| 관리 주체 | 플랫폼 팀 (인프라 레이어) | 각 팀 (매니페스트 레이어) |
+| 정책 범위 | 모듈을 사용하는 모든 네임스페이스에 동일 적용 | overlay 단위로 팀별 값 독립 설정 가능 |
+| 우회 가능성 | `kubectl delete` 후 `terraform apply`로 재생성됨 | GitOps 동기화 전까지 공백 발생 가능 |
+| 변경 이력 | 인프라 PR을 통해 관리, 변경 추적 명확 | 워크로드 매니페스트와 같은 레이어에서 가시성 높음 |
+| 팀별 커스터마이징 | 모듈 변수로 일부 가능, 기본적으로 통일된 값 | 팀마다 완전히 다른 quota/limit 설정 가능 |
+
+**선택 기준**
+
+- **Terraform 방식이 적합한 경우:** 플랫폼 팀이 quota 정책을 중앙에서 강제해야 하는 경우, 팀이 정책을 임의로 변경하거나 삭제하지 못하도록 인프라 레이어에서 보장이 필요한 경우
+- **Kustomize overlay 방식이 적합한 경우:** 팀마다 서비스 규모와 자원 요구사항이 크게 달라 개별 조정이 필요한 경우, 워크로드와 정책을 같은 레이어에서 함께 관리하고 싶은 경우
+- **혼용:** Terraform으로 모든 네임스페이스에 최솟값(하한 가드레일)을 강제하고, 팀이 overlay에서 추가 제약을 얹는 방식도 가능하다.
+
+## 검증 방법
 
 정책이 생성되었는지 확인한다.
 
@@ -236,7 +258,7 @@ kubectl scale deployment web -n <namespace> --replicas=<원래 값>
 - 리소스를 생략한 Pod에 기본 request/limit이 자동으로 채워진다.
 - quota 상한을 초과하는 Pod 생성이 `Forbidden` 오류로 차단된다.
 
-#### Risk 및 미적용 시 영향
+## Risk 및 미적용 시 영향
 
 - **공격 시나리오:** 공격자 또는 오작동한 사용자가 리소스 제한이 없는 Pod를 대량 생성하거나, CPU를 계속 사용하는 프로세스를 실행해 같은 노드의 다른 서비스 성능을 저하시킨다.
 - **설정 오류 시나리오:** 애플리케이션 메모리 누수, 무한 루프, 잘못된 batch job 병렬도 설정으로 인해 특정 네임스페이스가 클러스터 자원을 과점한다.
@@ -244,7 +266,7 @@ kubectl scale deployment web -n <namespace> --replicas=<원래 값>
 - **영향 범위:** 같은 노드 또는 같은 클러스터의 인접 서비스 지연, OOMKilled, 스케줄링 실패, autoscaling 비용 증가, 장애 원인 분석 지연
 - **심각도:** **중간** — 권한 탈취나 데이터 유출보다 직접적인 보안 영향은 낮을 수 있지만, 멀티테넌트 클러스터에서는 가용성 장애로 빠르게 확산될 수 있다.
 
-#### 인적 리소스 및 비용
+## 인적 리소스 및 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -254,7 +276,7 @@ kubectl scale deployment web -n <namespace> --replicas=<원래 값>
 | 도구 비용 | 없음. Kubernetes 기본 리소스 사용 |
 | 운영 고려사항 | 너무 낮은 quota는 정상 배포를 막고, 너무 높은 quota는 보호 효과가 약하다. 초기에는 보수적으로 적용한 뒤 관측 데이터 기반으로 조정한다. |
 
-#### 참고 자료
+## 참고 자료
 
 - [Kubernetes 공식 문서 - Resource Quotas](https://kubernetes.io/docs/concepts/policy/resource-quotas/)
 - [Kubernetes 공식 문서 - Limit Ranges](https://kubernetes.io/docs/concepts/policy/limit-range/)
@@ -262,7 +284,7 @@ kubectl scale deployment web -n <namespace> --replicas=<원래 값>
 - [Google Cloud Blog - Kubernetes best practices: resource requests and limits](https://cloud.google.com/blog/products/containers-kubernetes/kubernetes-best-practices-resource-requests-and-limits?hl=en)
 - [EKS Best Practices Guides - Reliability](https://aws.github.io/aws-eks-best-practices/reliability/)
 
-#### 연계된 보안 가이드라인 항목
+## 연계된 보안 가이드라인 항목
 
 이 항목은 아래 보안 기준과 직접 연결된다.
 
@@ -273,11 +295,11 @@ kubectl scale deployment web -n <namespace> --replicas=<원래 값>
 - **AWS EKS Best Practices**
   멀티테넌트 환경에서 ResourceQuota와 LimitRange를 조합해 네임스페이스별 자원 격리를 구성하는 것을 권장한다.
 
-#### Assessment 체크리스트
+## Assessment 체크리스트
 
 - [ ] 모든 팀 또는 서비스 네임스페이스에 `ResourceQuota`가 적용되어 있는가?
 - [ ] 모든 팀 또는 서비스 네임스페이스에 기본 `LimitRange`가 적용되어 있는가?
-- [ ] `ResourceQuota`와 `LimitRange`가 Terraform 모듈에서 관리되어 우회가 어려운 구조인가?
+- [ ] Terraform을 통해 중앙에서 배포되며, 개별 작업자가 임의로 리소스를 변경/삭제할 수 없도록 RBAC 권한 분리가 엄격히 설정되어 있는가?
 - [ ] 주요 워크로드 컨테이너에 CPU/Memory request와 limit이 명시되어 있는가?
 - [ ] quota 초과 Pod 생성이 `Forbidden` 오류로 차단되는 것을 테스트했는가?
 - [ ] 리소스를 생략한 Pod에 `LimitRange` 기본값이 자동으로 채워지는 것을 확인했는가?
