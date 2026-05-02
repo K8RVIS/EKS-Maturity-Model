@@ -16,8 +16,8 @@
 
 EKS에서는 같은 컨테이너 이미지와 매니페스트 패턴을 dev, stage, prod에 반복 적용하는 경우가 많다. 이때 하나의 하드코딩된 시크릿이 여러 환경에서 재사용되면 낮은 권한의 개발 환경 노출이 운영 환경 침해로 이어질 수 있다. 따라서 워크로드에는 실제 값이 아니라 외부 시크릿의 참조 이름만 남기고, 런타임 주입은 Kubernetes와 AWS의 통합 방식으로 처리해야 한다.
 
-Kubernetes 문서와 EKS 보안 가이드는 민감정보를 일반 설정값처럼 취급하지 말고 별도 보호 체계로 분리할 것을 권장한다. 현재 `eks-vulnerable-infra` 실습 매니페스트에도 취약한 예시가 존재한다.<br>
-`eks-vulnerable-infra/manifests/base/api/deployment.yaml`에서의 `REDIS_URL`과 `EXTERNAL_POSTGRES_PASSWORD`를 평문 `value`로 선언하고, `eks-vulnerable-infra/manifests/base/db/statefulset.yaml`에서는 `REDIS_PASSWORD`를 평문으로 선언한다. <br>
+Kubernetes 문서와 EKS 보안 가이드는 민감정보를 일반 설정값처럼 취급하지 말고 별도 보호 체계로 분리할 것을 권장한다. 현재 [`eks-vulnerable-infra`](https://github.com/K8RVIS/eks-vulnerable-infra) 실습 매니페스트에도 취약한 예시가 존재한다.<br> 
+[`eks-vulnerable-infra/manifests/base/api/deployment.yaml`](https://github.com/K8RVIS/eks-vulnerable-infra/blob/main/manifests/base/api/deployment.yaml)에서의 `REDIS_URL`과 `EXTERNAL_POSTGRES_PASSWORD`를 평문 `value`로 선언하고, [`eks-vulnerable-infra/manifests/base/db/statefulset.yaml`](https://github.com/K8RVIS/eks-vulnerable-infra/blob/main/manifests/base/db/statefulset.yaml)에서는 `REDIS_PASSWORD`를 평문으로 선언한다. <br>
 따라서 이런 민감정보를 제거하고 외부 참조 기반으로 전환하고자 한다. 
 
 ## 수행 방법
@@ -28,6 +28,8 @@ Kubernetes 문서와 EKS 보안 가이드는 민감정보를 일반 설정값처
 - AWS Secrets Manager 또는 Systems Manager Parameter Store에 시크릿을 생성할 권한이 필요하다.
 - Pod가 외부 시크릿에 접근할 수 있도록 IRSA 또는 EKS Pod Identity를 사용할 수 있어야 한다.
 - External Secrets Operator(ESO) 또는 Secrets Store CSI Driver 중 어떤 방식을 사용할지 정해야 한다.
+- ESO 방식을 사용하는 경우 클러스터에 External Secrets Operator가 설치되어 있고,
+  `SecretStore`와 `ExternalSecret` CRD를 사용할 수 있어야 한다.
 - 이미 Git이나 이미지 레이어에 들어간 기존 하드코딩 시크릿 값은 노출된 것으로 간주하고 삭제 전에 새 값으로 변경하여 적용할 필요가 있다.
 - 현 단계에서는 암호 자동 로테이션 적용을 고려하지 않고 진행한다. 
 
@@ -97,6 +99,41 @@ EKS 워크로드에서는 다음 두 방식을 주로 사용한다.
 | Secrets Store CSI Driver | 시크릿을 파일로 마운트하고 Kubernetes Secret 생성을 줄일 수 있음 | 앱이 파일 기반 로딩을 지원해야 하며 rotation 동작을 검증해야 함 | Secret 값을 Kubernetes API에 오래 남기고 싶지 않은 경우 |
 
 기존 매니페스트가 환경변수 기반이면 ESO를 먼저 적용하는 편이 전환 비용이 낮다. 장기적으로는 앱이 파일 기반 또는 SDK 기반 Secret 로딩을 지원하도록 개선하면 환경변수 노출 위험도 줄일 수 있다.
+
+ESO 방식을 선택했다면 `SecretStore`, `ExternalSecret` 리소스를 적용하기 전에 클러스터에 External Secrets Operator와 CRD가 설치되어 있어야 한다.
+
+먼저 CRD와 controller Pod 상태를 확인한다.
+
+```bash
+kubectl get crd | rg 'external-secrets.io'
+kubectl get pods -n external-secrets
+```
+
+기대 결과:
+
+`externalsecrets.external-secrets.io`, `secretstores.external-secrets.io`, `clustersecretstores.external-secrets.io` 같은 CRD가 존재하며, `external-secrets` namespace의 controller Pod가 Running 상태이다.
+
+설치되어 있지 않다면 Helm으로 설치한다.
+
+```bash
+helm repo add external-secrets https://charts.external-secrets.io
+helm repo update
+
+helm install external-secrets external-secrets/external-secrets \
+  -n external-secrets \
+  --create-namespace
+```
+설치 후 controller와 CRD가 준비될 때까지 확인한다.
+```bash
+kubectl rollout status deployment/external-secrets -n external-secrets
+
+kubectl get crd externalsecrets.external-secrets.io
+kubectl get crd secretstores.external-secrets.io
+kubectl get crd clustersecretstores.external-secrets.io
+```
+기대 결과:
+
+ESO controller 배포가 정상 완료되고, ExternalSecret, SecretStore, ClusterSecretStore CRD를 사용할 수 있다.
 
 ### **Step 4: IRSA 또는 Pod Identity로 최소 권한을 부여한다**
 
