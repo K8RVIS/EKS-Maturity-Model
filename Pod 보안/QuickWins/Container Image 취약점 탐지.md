@@ -10,7 +10,7 @@
 
 ---
 
-#### 왜 필요한가
+## 왜 필요한가
 
 컨테이너 이미지는 OS 패키지, 언어 런타임, 애플리케이션 의존성, 빌드 산출물, 설정 파일이 함께 들어 있는 복합 아티팩트다. 이 중 하나라도 알려진 CVE를 포함하면 해당 이미지를 기반으로 실행되는 모든 Pod가 같은 취약점을 공유한다.
 
@@ -23,7 +23,7 @@ Trivy CI 스캔으로 전자를 배포 전에 차단하고, Inspector CONTINUOUS
 
 이미지 스캔은 런타임 보안 도구를 대체하지 않는다. 다만 취약한 이미지가 클러스터에 들어오는 시점을 앞단에서 차단하므로, EKS 워크로드의 공격 표면을 가장 빠르게 줄일 수 있는 Quick Wins 항목이다.
 
-#### 수행 방법
+## 수행 방법
 
 **사전 조건**
 
@@ -47,7 +47,7 @@ ECR 스캐닝 설정을 확인한다.
 
 ```bash
 AWS_PROFILE=<PROFILE> aws ecr get-registry-scanning-configuration \
-  --region ap-northeast-2
+  --region <region>
 ```
 
 Inspector v2 활성화 상태를 확인한다.
@@ -55,7 +55,7 @@ Inspector v2 활성화 상태를 확인한다.
 ```bash
 AWS_PROFILE=<PROFILE> aws inspector2 batch-get-account-status \
   --account-ids $(AWS_PROFILE=<PROFILE> aws sts get-caller-identity --query Account --output text) \
-  --region ap-northeast-2
+  --region <region>
 ```
 
 현황 파악에서 다음 문제점을 확인한다.
@@ -275,7 +275,7 @@ spec:
 
 이미지 스캔을 통과한 이미지라도 시간이 지나면 새 CVE가 공개될 수 있다. ECR 향상된 스캔의 CONTINUOUS_SCAN으로 이미 저장된 이미지의 상태도 계속 확인한다.
 
-#### 검증 방법
+## 검증 방법
 
 CI/CD 파이프라인에서 Trivy가 실제로 배포를 차단하는지 확인한다. PR을 생성하면 매니페스트에 등록된 이미지에 대해 스캔이 실행되고, CRITICAL/HIGH 취약점이 있는 이미지는 해당 job이 실패한다.
 
@@ -283,7 +283,7 @@ CI/CD 파이프라인에서 Trivy가 실제로 배포를 차단하는지 확인�
 failing checks
 Container Image Scan / Scan: nginx:1.27.5       ← CRITICAL/HIGH 발견으로 실패
 Container Image Scan / Scan: redis:7            ← CRITICAL/HIGH 발견으로 실패
-Container Image Scan / Scan: ealen/echo-server  ← CRITICAL/HIGH 발견으로 실패
+Container Image Scan / Scan: <image>  ← CRITICAL/HIGH 발견으로 실패
 
 successful checks
 Code scanning results / Trivy                   ← SARIF 업로드 성공
@@ -296,7 +296,7 @@ ECR 리포지토리 생성 및 설정을 확인한다.
 AWS_PROFILE=<PROFILE> aws ecr describe-repositories \
   --query 'repositories[*].{name:repositoryName,immutable:imageTagMutability,encryption:encryptionConfiguration.encryptionType}' \
   --output table \
-  --region ap-northeast-2
+  --region <region>
 ```
 
 기대 결과: `imageTagMutability`가 `IMMUTABLE`, `encryptionType`이 `KMS`로 표시된다.
@@ -305,7 +305,7 @@ ECR 향상된 스캔 설정이 적용되었는지 확인한다.
 
 ```bash
 AWS_PROFILE=<PROFILE> aws ecr get-registry-scanning-configuration \
-  --region ap-northeast-2
+  --region <region>
 ```
 
 기대 결과:
@@ -326,7 +326,7 @@ Amazon Inspector v2 ECR 스캔이 활성화되었는지 확인한다.
 ```bash
 AWS_PROFILE=<PROFILE> aws inspector2 batch-get-account-status \
   --account-ids $(AWS_PROFILE=<PROFILE> aws sts get-caller-identity --query Account --output text) \
-  --region ap-northeast-2
+  --region <region>
 ```
 
 기대 결과:
@@ -357,7 +357,7 @@ AWS_PROFILE=<PROFILE> aws inspector2 list-findings \
       { "comparison": "EQUALS", "value": "HIGH" }
     ]
   }' \
-  --region ap-northeast-2
+  --region <region>
 ```
 
 검증 완료 기준은 다음과 같다.
@@ -369,7 +369,7 @@ AWS_PROFILE=<PROFILE> aws inspector2 list-findings \
 - Inspector v2 ECR 상태가 `ENABLED`로 확인된다.
 - Critical/High 발견 시 배포 단계가 실행되지 않는다.
 
-#### Risk 및 미적용 시 영향
+## Risk 및 미적용 시 영향
 
 - **공격 시나리오 예시:** 공격자가 공개된 RCE 취약점이 포함된 웹 프레임워크, OpenSSL, Java 라이브러리, Node.js 패키지를 악용해 Pod 내부에서 명령을 실행한다. 이후 서비스 계정 토큰, 환경변수, 마운트된 Secret, 내부 API endpoint를 이용해 추가 침해를 시도한다.
 - **공급망 시나리오 예시:** 오래된 베이스 이미지나 패치되지 않은 언어 패키지가 여러 서비스 이미지에 복제되어, 하나의 CVE가 다수 Pod와 네임스페이스에 동시에 영향을 준다.
@@ -377,7 +377,7 @@ AWS_PROFILE=<PROFILE> aws inspector2 list-findings \
 - **영향 범위:** 원격 코드 실행, 민감 데이터 유출, 서비스 계정 권한 탈취, 내부 네트워크 정찰, 이미지 재빌드 및 긴급 배포로 인한 운영 부담
 - **심각도:** **높음**. 컨테이너 이미지 취약점은 동일 이미지를 사용하는 모든 Pod에 반복적으로 전파되며, RCE 취약점과 결합되면 클러스터 침해의 초기 진입점이 될 수 있다.
 
-#### 인적 리소스 및 비용
+## 인적 리소스 및 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -387,7 +387,7 @@ AWS_PROFILE=<PROFILE> aws inspector2 list-findings \
 | 도구 비용 | Trivy는 오픈소스. GitHub Advanced Security, 상용 이미지 스캐너, CSPM/CNAPP 도입 시 별도 비용 발생 |
 | 운영 고려사항 | false positive, 패치 미제공 취약점, 스캔 DB 업데이트 지연, CI 실행 시간 증가를 고려해 예외 정책과 리포트 보관 방식을 정해야 한다. |
 
-#### 참고 자료
+## 참고 자료
 
 - [Trivy 공식 문서 - Vulnerability Scanning](https://trivy.dev/docs/dev/guide/scanner/vulnerability/)
 - [Trivy 공식 문서 - CI/CD Integrations](https://trivy.dev/docs/dev/ecosystem/cicd/)
@@ -398,7 +398,7 @@ AWS_PROFILE=<PROFILE> aws inspector2 list-findings \
 - [CIS Kubernetes Benchmark v1.12.0](../CIS_Kubernetes_Benchmark_V1.12.0_PDF.md)
 - [NSA/CISA Kubernetes Hardening Guidance](../CTR_KUBERNETES_HARDENING_GUIDANCE_1.2_20220829.md)
 
-#### 연계된 보안 가이드라인 항목
+## 연계된 보안 가이드라인 항목
 
 이 항목은 아래 보안 기준과 직접 연결된다.
 
@@ -409,7 +409,7 @@ AWS_PROFILE=<PROFILE> aws inspector2 list-findings \
 - **AWS EKS Best Practices**
   ECR 이미지 스캔, Amazon Inspector, CI/CD 보안 검사를 조합해 워크로드 이미지의 취약점을 지속적으로 관리하는 것을 권장한다.
 
-#### Assessment 체크리스트
+## Assessment 체크리스트
 
 - [ ] CI/CD 파이프라인에 Trivy 이미지 스캔 단계가 포함되어 있는가?
 - [ ] 매니페스트에서 이미지를 자동으로 추출해 스캔 대상으로 사용하는가?
