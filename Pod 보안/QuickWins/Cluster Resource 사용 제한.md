@@ -180,7 +180,8 @@ spec:
 >
 > Terraform 모듈 대신 각 팀 overlay에 직접 `ResourceQuota`와 `LimitRange` 매니페스트를 두는 방식도 가능하다. `manifests/overlays/<namespace>/resource-controls.yaml`을 생성하고 `kustomization.yaml`에 포함하면 된다. 이 방식은 팀마다 다른 quota 값을 독립적으로 유지할 수 있고 변경이 워크로드 매니페스트와 같은 레이어에서 관리된다. 다만 `kubectl delete`로 직접 삭제하면 다음 GitOps 동기화 전까지 공백이 생길 수 있어, Terraform 방식보다 우회가 쉽다.
 >
-> **Terraform 방식 vs Kustomize overlay 방식 비교**
+
+**Terraform 방식 vs Kustomize overlay 방식 비교**
 
 ResourceQuota와 LimitRange를 적용하는 방식은 크게 두 가지다. 환경과 운영 정책에 따라 선택하거나 혼용할 수 있다.
 
