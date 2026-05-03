@@ -28,7 +28,7 @@ Kubernetes에서 `ServiceAccount(SA)`는 Pod가 Kubernetes API 서버에 자신�
 
 EKS에서도 원칙은 같다. 특히 EKS는 IRSA나 Pod Identity처럼 워크로드별 권한 분리가 중요한 환경이므로, `default` SA를 계속 사용하면 Kubernetes의 RBAC 경계와 AWS의 IAM 보안 경계를 모호하게 만들어, '최소 권한 원칙'의 적용을 불가능하게 만들 수 있다.
 
-현재 `eks-secure-infra` 실습 환경의 insecure baseline에서도 이 위험을 확인할 수 있다. [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/api/deployment.yaml:19)에는 아래와 같이 `api` 워크로드가 `default` SA와 자동 토큰 마운트를 사용하도록 설정되어 있다.
+현재 `eks-secure-infra` 실습 환경의 insecure baseline에서도 이 위험을 확인할 수 있다. [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/api/deployment.yaml)에는 아래와 같이 `api` 워크로드가 `default` SA와 자동 토큰 마운트를 사용하도록 설정되어 있다.
 
 ```yaml
 spec:
@@ -183,7 +183,7 @@ roleRef:
 
 ### Step 5: eks-secure-infra에 수동으로 반영한다
 
-현재 저장소 기준으로는 [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/api/deployment.yaml:19)의 `api` Deployment를 먼저 수정하는 것이 가장 직접적인 적용 포인트다.
+현재 저장소 기준으로는 [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/api/deployment.yaml)의 `api` Deployment를 먼저 수정하는 것이 가장 직접적인 적용 포인트다.
 
 권장 반영 순서는 다음과 같다.
 

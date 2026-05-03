@@ -23,7 +23,7 @@
 - 애플리케이션이 루트 파일시스템을 수정하지 못하도록 `readOnlyRootFilesystem: true`를 적용한다.
 - 쓰기가 꼭 필요한 경로는 `emptyDir`, PVC 등 명시적인 쓰기 볼륨으로 분리한다.
 
-현재 `eks-secure-infra` 실습 환경의 insecure baseline에서도 이 위험을 확인할 수 있다. [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/web/deployment.yaml:25)에는 아래와 같이 `web` 컨테이너가 root 사용자로 실행되도록 설정되어 있다.
+현재 `eks-secure-infra` 실습 환경의 insecure baseline에서도 이 위험을 확인할 수 있다. [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/web/deployment.yaml)에는 아래와 같이 `web` 컨테이너가 root 사용자로 실행되도록 설정되어 있다.
 
 ```yaml
 securityContext:
