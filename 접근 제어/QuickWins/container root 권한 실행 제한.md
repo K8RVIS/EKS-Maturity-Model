@@ -2,7 +2,7 @@
 
 > **Phase:** Quick Wins
 >
-> **보안 영역:** 컨테이너 보안
+> **보안 영역:** 접근제어
 >
 > **담당:** 공통 (전체 실습)
 >
@@ -107,15 +107,13 @@ spec:
 
 핵심 필드는 다음과 같이 이해하면 된다.
 
-| 필드                                  | 목적                                       |
-| ------------------------------------- | ------------------------------------------ |
-| `runAsNonRoot: true`                  | UID 0으로 실행되는 컨테이너 시작을 거부    |
-| `runAsUser: 10001`                    | 컨테이너 프로세스 실행 UID를 명시          |
-| `runAsGroup: 10001`                   | 컨테이너 프로세스 실행 GID를 명시          |
-| `readOnlyRootFilesystem: true`        | 컨테이너 루트 파일시스템 쓰기 차단         |
-| `allowPrivilegeEscalation: false`     | setuid, setgid 등을 통한 권한 상승 차단    |
-| `capabilities.drop: ["ALL"]`          | 기본 Linux capability를 제거해 공격면 축소 |
-| `seccompProfile.type: RuntimeDefault` | 런타임 기본 seccomp 프로필 적용            |
+| 필드                              | 목적                                    |
+| --------------------------------- | --------------------------------------- |
+| `runAsNonRoot: true`              | UID 0으로 실행되는 컨테이너 시작을 거부 |
+| `runAsUser: 10001`                | 컨테이너 프로세스 실행 UID를 명시       |
+| `runAsGroup: 10001`               | 컨테이너 프로세스 실행 GID를 명시       |
+| `readOnlyRootFilesystem: true`    | 컨테이너 루트 파일시스템 쓰기 차단      |
+| `allowPrivilegeEscalation: false` | setuid, setgid 등을 통한 권한 상승 차단 |
 
 ### Step 3: 쓰기가 필요한 경로만 별도 볼륨으로 분리한다
 
@@ -248,7 +246,6 @@ kubectl run root-test -n <namespace명> \
 
 ## 인적 리소스 및 비용
 
-- **담당자 및 예상 소요 시간:** 플랫폼 엔지니어 또는 애플리케이션 담당자 1명 기준으로 워크로드 1개당 점검 30분~1시간, 이미지 수정이 필요한 경우 빌드/테스트 포함 1~3시간
 - **AWS 비용 발생 여부 및 예상 규모:** 없음. Kubernetes 기본 보안 컨텍스트와 매니페스트 수정만으로 적용 가능
 - **오픈소스 vs 상용 도구 선택 시 비용 차이:** 필수 비용 없음. 정책 검증 자동화가 필요하면 Kyverno, OPA Gatekeeper 같은 오픈소스 정책 엔진을 추가로 사용할 수 있다.
 
@@ -278,11 +275,10 @@ kubectl run root-test -n <namespace명> \
 
 ## Assessment 체크리스트
 
-- [ ] Dockerfile 또는 베이스 이미지가 non-root 사용자 실행을 지원하는가?
 - [ ] Deployment 또는 Pod에 `runAsNonRoot: true`가 설정되어 있는가?
 - [ ] `runAsUser`와 `runAsGroup`이 0이 아닌 UID/GID로 명시되어 있는가?
 - [ ] 컨테이너에 `readOnlyRootFilesystem: true`가 설정되어 있는가?
-- [ ] 컨테이너에 `allowPrivilegeEscalation: false`와 `capabilities.drop: ["ALL"]`이 적용되어 있는가?
+- [ ] 컨테이너에 `allowPrivilegeEscalation: false`이 적용되어 있는가?
 - [ ] 애플리케이션이 쓰는 경로가 루트 파일시스템이 아니라 명시적인 볼륨으로 분리되어 있는가?
 - [ ] `kubectl exec -- id` 결과가 `uid=0(root)`가 아님을 확인했는가?
 - [ ] 루트 파일시스템 쓰기 시도 시 `Read-only file system` 오류가 발생하는가?
