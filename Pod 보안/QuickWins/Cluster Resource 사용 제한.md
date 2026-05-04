@@ -16,7 +16,7 @@ Kubernetes 클러스터는 여러 팀과 서비스가 같은 노드 풀, API 서
 
 EKS에서도 기본 동작은 같다. 네임스페이스에 `ResourceQuota`가 없으면 팀별 총 사용량 상한이 없고, Pod나 컨테이너에 `resources.requests`와 `resources.limits`가 없으면 스케줄러가 필요한 용량을 정확히 계산하기 어렵다. 그 결과 한 팀의 테스트 워크로드가 노드 자원을 잠식하거나, HPA와 Cluster Autoscaler가 예측하기 어려운 방향으로 동작할 수 있다.
 
-현재 `eks-vulnerable-infra` 실습 기준선에서도 이 위험을 확인할 수 있다. [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/web/deployment.yaml)과 [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/web/deployment.yaml)은 컨테이너에 CPU/Memory request와 limit을 지정하지 않는다. [statefulset.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/db/statefulset.yaml)은 PVC storage request만 있고 컨테이너 CPU/Memory 제한은 없다.
+현재 `eks-secure-infra` 실습 기준선에서도 이 위험을 확인할 수 있다. [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/web/deployment.yaml)과 [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/web/deployment.yaml)은 컨테이너에 CPU/Memory request와 limit을 지정하지 않는다. [statefulset.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/db/statefulset.yaml)은 PVC storage request만 있고 컨테이너 CPU/Memory 제한은 없다.
 
 팀이 각자 `requests`와 `limits`를 잘 설정하도록 권장하는 것만으로는 충분하지 않다. 사람은 설정을 쉽게 누락하고, 반대로 특정 팀이 지나치게 큰 request/limit을 선언하면 클러스터의 공용 자원을 과도하게 점유할 수 있다. 따라서 워크로드 매니페스트에는 서비스별 값을 명시하되, 클러스터 운영자는 네임스페이스 레벨의 `ResourceQuota`와 `LimitRange`로 최소한의 강제선을 함께 둬야 한다.
 
