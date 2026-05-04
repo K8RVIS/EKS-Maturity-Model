@@ -231,7 +231,6 @@ kubectl exec -n team-a deploy/api -- ls /var/run/secrets/kubernetes.io/serviceac
 
 ## 인적 리소스 및 비용
 
-- **담당자 및 예상 소요 시간:** 플랫폼 엔지니어 1명 기준으로 네임스페이스 현황 점검 30분~1시간, 샘플 워크로드 수정 30분 내외
 - **AWS 비용 발생 여부 및 예상 규모:** 없음
 - **오픈소스 vs 상용 도구 선택 시 비용 차이:** 없음. Kubernetes 기본 기능과 매니페스트 수정만으로 적용 가능
 
