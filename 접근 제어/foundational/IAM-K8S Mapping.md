@@ -51,6 +51,8 @@ EKS Access Entries를 사용하면 다음과 같은 장점이 있다.
 
 ## 수행 방법
 
+아래 절차는 현재 저장소의 Terraform 반영 방식과 AWS CLI 수동 적용 예시를 함께 설명한다. 운영 반영은 `eks-secure-infra/environments/infra/main.tf`의 `access_entries`을 기준으로 하고, CLI 명령은 동일한 작업을 수동으로 수행하거나 적용 결과를 검증할 때 사용한다.
+
 ### 사전 조건
 
 - EKS 클러스터를 수정할 수 있는 AWS IAM 권한이 필요하다.
@@ -82,6 +84,20 @@ aws eks describe-cluster \
 ### Step 2: 클러스터 인증 모드를 API_AND_CONFIG_MAP로 변경한다
 
 기존 `aws-auth` ConfigMap 매핑을 즉시 제거하지 않고 Access Entries를 병행하려면 `API_AND_CONFIG_MAP` 모드를 사용한다.
+
+현재 `eks-secure-infra` 저장소에서는 `eks-secure-infra/environments/infra/main.tf`의 EKS 모듈 호출부에서 인증 모드를 선언한다.
+
+```hcl
+module "eks" {
+  source = "../../modules/eks"
+
+  # 생략
+
+  authentication_mode = "API_AND_CONFIG_MAP"
+}
+```
+
+CLI로 수동 변경하는 경우에는 다음 명령을 사용한다.
 
 ```bash
 aws eks update-cluster-config \
@@ -120,6 +136,17 @@ aws eks describe-cluster \
 
 Access Entry는 IAM 사용자 또는 IAM 역할 ARN을 기준으로 생성한다. 권한을 줄 대상의 ARN을 정확히 확인해야 한다.
 
+현재 저장소에서는 `eks-secure-infra/environments/infra/variables.tf`의 `user_iam_arn` 변수로 권한을 부여할 IAM Principal ARN을 주입한다.
+
+```hcl
+variable "user_iam_arn" {
+  description = "EKS 관리자 권한을 부여할 IAM ARN"
+  type        = string
+}
+```
+
+이 값은 `environments/infra/main.tf`의 `access_entries`에서 `principal_arn = var.user_iam_arn`으로 사용된다.
+
 현재 AWS CLI가 사용하는 IAM 신분을 확인하려면 다음 명령을 사용한다.
 
 ```bash
@@ -137,6 +164,55 @@ arn:aws:iam::[account-id]:role/[iam-role명]
 ## Step 4: Access Entry를 생성하고 AWS 관리형 Access Policy를 연결한다
 
 확인한 IAM Principal ARN을 사용해 Access Entry를 생성한다.
+
+현재 저장소에서는 `environments/infra/main.tf`의 `access_entries`에 IAM Principal과 연결할 Access Policy를 함께 선언한다.
+
+```hcl
+access_entries = {
+  teamc_user = {
+    principal_arn = var.user_iam_arn
+    policy_associations = {
+      admin = {
+        policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+        access_scope = {
+          type = "cluster"
+        }
+      }
+    }
+  }
+}
+```
+
+이 설정은 `var.user_iam_arn`으로 전달된 IAM 사용자 또는 IAM 역할 ARN에 대해 Access Entry를 생성하고, 클러스터 전체 범위의 `AmazonEKSClusterAdminPolicy`를 연결한다.
+
+모듈 내부에서는 `eks-secure-infra/modules/eks/main.tf`의 `aws_eks_access_entry` 리소스가 Access Entry를 생성한다.
+
+```hcl
+resource "aws_eks_access_entry" "this" {
+  for_each = var.access_entries
+
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = each.value.principal_arn
+  type          = "STANDARD"
+}
+```
+
+그리고 `aws_eks_access_policy_association` 리소스가 각 Access Entry에 AWS 관리형 Access Policy를 연결한다.
+
+```hcl
+resource "aws_eks_access_policy_association" "this" {
+  cluster_name  = aws_eks_cluster.this.name
+  policy_arn    = each.value.policy_arn
+  principal_arn = each.value.principal
+
+  access_scope {
+    type       = each.value.scope.type
+    namespaces = lookup(each.value.scope, "namespaces", null)
+  }
+}
+```
+
+CLI로 수동 생성하는 경우에는 다음 명령을 사용한다.
 
 ```bash
 aws eks create-access-entry \

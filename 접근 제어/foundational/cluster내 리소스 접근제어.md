@@ -35,6 +35,8 @@ Kubernetes API는 Pod 조회, Secret 조회, Deployment 수정, ServiceAccount �
 
 ## 수행 방법
 
+아래 절차는 현재 저장소의 Kustomize 매니페스트 반영 방식과 `kubectl` CLI 수동 적용 예시를 함께 설명한다. 운영 반영은 `eks-secure-infra/manifests/overlays/[namespace명]` 아래의 `*-rbac.yaml`과 `kustomization.yaml` 수정을 기준으로 하고, CLI 명령은 동일한 리소스를 수동으로 생성하거나 검증할 때 사용한다.
+
 ### 사전 조건
 
 - 실습 대상 EKS 클러스터에 `kubectl`로 접근할 수 있어야 한다.
@@ -59,6 +61,16 @@ kubectl get namespace [namespace명]
 
 Pod나 애플리케이션에 부여할 권한을 검증하기 위해 ServiceAccount를 생성한다.
 
+현재 `eks-secure-infra` 저장소에서는 워크로드별 전용 ServiceAccount를 오버레이에 이미 분리해 두고 있다. RBAC는 이 전용 ServiceAccount를 대상으로 연결한다.
+
+| 오버레이 예시                                                               | ServiceAccount |
+| --------------------------------------------------------------------------- | -------------- |
+| `eks-secure-infra/manifests/overlays/[namespace명]/api-serviceaccount.yaml` | `api-workload` |
+| `eks-secure-infra/manifests/overlays/[namespace명]/web-serviceaccount.yaml` | `web-workload` |
+| `eks-secure-infra/manifests/overlays/[namespace명]/db-serviceaccount.yaml`  | `db-workload`  |
+
+CLI로 수동 생성하는 경우에는 다음과 같이 작성한다.
+
 ```yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -82,6 +94,30 @@ kubectl get serviceaccount [serviceAccount명] -n [namespace명]
 ### Step 3: 네임스페이스 전용 Role을 생성한다
 
 특정 네임스페이스 안에서 Pod 리소스만 읽을 수 있는 Role을 생성한다.
+
+현재 저장소에서는 워크로드 성격에 맞춰 `*-rbac.yaml` 파일 안에 Role을 정의한다. 대표 구성은 다음과 같다.
+
+| 파일            | Role               | 허용 리소스           | 허용 동작                        |
+| --------------- | ------------------ | --------------------- | -------------------------------- |
+| `api-rbac.yaml` | `api-manager`      | `deployments`, `pods` | `patch`, `update`, `get`, `list` |
+| `web-rbac.yaml` | `web-pod-reader`   | `pods`                | `get`, `list`, `watch`           |
+| `db-rbac.yaml`  | `db-secret-reader` | `secrets`             | `get`                            |
+
+예를 들어 `web-rbac.yaml`은 다음과 같이 Pod 읽기 권한만 부여한다.
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: [namespace명]
+  name: web-pod-reader
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+```
+
+CLI로 수동 생성하는 경우에는 다음과 같이 일반화해 적용한다.
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -120,6 +156,46 @@ Role의 주요 필드는 다음과 같다.
 ### Step 4: ServiceAccount에 RoleBinding을 설정한다
 
 특정 ServiceAccount가 특정 Role을 사용하도록 RoleBinding을 생성한다.
+
+현재 저장소에서는 같은 `*-rbac.yaml` 파일 안에 RoleBinding도 함께 정의한다. 예를 들어 `web-rbac.yaml`은 `web-pod-reader` Role을 `web-workload` ServiceAccount에 연결한다.
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: web-rb
+  namespace: [namespace명]
+subjects:
+  - kind: ServiceAccount
+    name: web-workload
+    namespace: [namespace명]
+roleRef:
+  kind: Role
+  name: web-pod-reader
+  apiGroup: rbac.authorization.k8s.io
+```
+
+작성한 `*-rbac.yaml`은 오버레이의 `kustomization.yaml`에 포함되어야 한다.
+
+```yaml
+resources:
+  - ../../base
+  - default-serviceaccount.yaml
+  - api-serviceaccount.yaml
+  - web-serviceaccount.yaml
+  - db-serviceaccount.yaml
+  - web-rbac.yaml
+  - api-rbac.yaml
+  - db-rbac.yaml
+```
+
+운영 반영은 다음처럼 Kustomize 오버레이 단위로 수행한다.
+
+```bash
+kubectl apply -k eks-secure-infra/manifests/overlays/[namespace명]
+```
+
+CLI로 RoleBinding만 수동 생성하는 경우에는 다음과 같이 작성한다.
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -232,6 +308,18 @@ roleRef:
 
 ## 검증 방법
 
+먼저 Kustomize 오버레이에 RBAC 리소스가 포함되어 있는지 렌더링 결과를 확인한다.
+
+```bash
+kubectl kustomize eks-secure-infra/manifests/overlays/[namespace명]
+```
+
+출력 결과에 `kind: Role`, `kind: RoleBinding`, 대상 ServiceAccount 이름이 포함되어 있어야 한다. 실제 클러스터에 적용할 때는 다음 명령을 사용한다.
+
+```bash
+kubectl apply -k eks-secure-infra/manifests/overlays/[namespace명]
+```
+
 먼저 Role과 RoleBinding이 생성되었는지 확인한다.
 
 ```bash
@@ -314,7 +402,7 @@ ClusterRoleBinding을 적용했다면 기대 결과는 `yes`이다. 적용하지
 - **AWS 비용 발생 여부 및 예상 규모:** 없음. Kubernetes 기본 RBAC 리소스 생성만으로 적용 가능
 - **정책 및 권한 관리 도구:** 대규모 환경에서는 Kyverno, OPA Gatekeeper, RBAC Manager 같은 정책 또는 권한 관리 도구를 추가로 사용할 수 있다.
 
-#### 참고 자료
+## 참고 자료
 
 - [Amazon EKS Best Practices - Identity and Access Management](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html)
 - [Kubernetes - Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
@@ -322,7 +410,7 @@ ClusterRoleBinding을 적용했다면 기대 결과는 `yes`이다. 적용하지
 - [CIS Kubernetes Benchmark v1.12.0](../CIS_Kubernetes_Benchmark_V1.12.0_PDF.md)
 - [NSA/CISA Kubernetes Hardening Guidance](../CTR_KUBERNETES_HARDENING_GUIDANCE_1.2_20220829.md)
 
-#### 연결된 보안 가이드라인 항목
+## 연결된 보안 가이드라인 항목
 
 이 항목은 아래 보안 기준과 직접 연결된다.
 
@@ -339,7 +427,7 @@ ClusterRoleBinding을 적용했다면 기대 결과는 `yes`이다. 적용하지
   `RBAC and least privilege`
   사용자와 ServiceAccount에 필요한 최소 권한만 부여하고, 클러스터 전체 권한은 엄격히 제한할 것을 권고한다.
 
-#### Assessment 체크리스트
+## Assessment 체크리스트
 
 - [ ] 네임스페이스별로 필요한 권한 범위가 정의되어 있는가?
 - [ ] ServiceAccount 또는 사용자에 RoleBinding이 명시적으로 연결되어 있는가?
