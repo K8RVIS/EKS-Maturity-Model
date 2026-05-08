@@ -142,44 +142,16 @@ spec:
 
 ### Step 4: Kubernetes API 접근이 꼭 필요한 워크로드만 예외로 처리한다
 
-일부 컨트롤러, 오퍼레이터, 배치 작업은 Kubernetes API를 직접 호출해야 한다. 이런 경우에는 전용 SA를 만들고, 필요한 최소 RBAC만 부여한 뒤, 그 워크로드에 한해서만 토큰 마운트를 허용한다.
+일부 컨트롤러, 오퍼레이터, 배치 작업은 Kubernetes API를 직접 호출해야 하므로 ServiceAccount 토큰이 필요할 수 있다. 이 경우에도 `default` SA를 다시 사용하지 말고, Step 3처럼 워크로드 전용 SA를 만든 뒤 해당 워크로드에 한해서만 토큰 마운트를 허용한다.
 
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: report-job
-  namespace: <namespace명>
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: report-job-reader
-  namespace: <namespace명>
-rules:
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: report-job-reader-binding
-  namespace: <namespace명>
-subjects:
-  - kind: ServiceAccount
-    name: report-job
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: report-job-reader
-```
+RBAC는 이 항목의 핵심 적용 대상은 아니지만, 실제 운영에서는 API 호출에 필요한 최소 권한만 전용 SA에 별도로 부여해야 한다. 예를 들어 Pod 조회만 필요하면 `pods`에 대한 `get`, `list` 정도만 허용하고, Secret 조회나 리소스 수정 권한은 부여하지 않는다.
 
 이 경우에도 핵심은 같다.
 
 - `default` SA를 쓰지 않는다.
 - 필요한 워크로드마다 전용 SA를 만든다.
-- 토큰을 허용하더라도 RBAC는 최소 권한만 부여한다.
+- 토큰 마운트는 Kubernetes API 접근이 필요한 워크로드에만 허용한다.
+- RBAC가 필요한 경우에는 별도 접근 제어 항목에 따라 최소 권한만 부여한다.
 
 ### Step 5: eks-secure-infra에 수동으로 반영한다
 
