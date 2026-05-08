@@ -18,6 +18,8 @@ Quick Wins 단계에서는 외부 Secret storage까지 도입하지 않더라도
 
 이 문서는 각 namespace에 `app-secrets` Kubernetes Secret을 만들고, `api` Deployment와 `db` StatefulSet이 이 Secret을 참조하도록 변경한다.
 
+이 방식은 하드코딩된 값을 빠르게 제거하기 위한 첫 단계다. 이후에는 AWS Secrets Manager, Systems Manager Parameter Store 같은 외부 secret storage와 External Secrets Operator 또는 Secrets Store CSI Driver를 연계해 Secret 원본을 클러스터 밖에서 관리하는 방식으로 확장할 수 있다.
+
 다만 Kubernetes Secret의 `data` 필드는 API 표현상 base64 문자열로 보인다. 이는 암호화가 아니라 Kubernetes가 임의의 바이너리 데이터를 YAML/JSON에 담기 위한 직렬화 방식이다.
 
 EKS의 envelope encryption은 이와 다른 계층에서 동작한다. EKS 1.28 이상에서는 Kubernetes API data가 etcd에 저장되기 전에 기본 envelope encryption이 적용된다. 하지만 `kubectl get secret -o yaml`로 조회하면 API server가 etcd에서 데이터를 복호화한 뒤 Kubernetes Secret 객체 형식으로 반환하므로 여전히 base64로 보인다. 따라서 base64로 보인다는 사실만으로 저장 계층 암호화가 꺼져 있다고 판단하면 안 된다.
@@ -235,6 +237,7 @@ Kubernetes Secret 참조로 바꿨더라도 Secret을 읽을 수 있는 권한�
 - EKS 1.28 이상에서는 Kubernetes API data에 기본 envelope encryption이 적용된다. EKS 1.27 이하에서는 KMS 기반 Secret encryption을 별도로 활성화해야 한다.
 - Terraform state backend는 암호화하고 접근 권한을 제한한다.
 - PR과 CI에서 secret scanning을 실행해 하드코딩 Secret 재유입을 막는다.
+- 운영 성숙도가 올라가면 외부 secret storage를 Secret 원본으로 두고 Kubernetes Secret은 동기화 또는 마운트 대상으로만 사용하는 구조를 검토한다.
 
 간단한 재유입 점검 예시는 다음과 같다.
 
