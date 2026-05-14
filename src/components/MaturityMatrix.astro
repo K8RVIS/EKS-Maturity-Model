@@ -1,0 +1,163 @@
+---
+import items from "../data/maturity-items.json";
+
+interface Props {
+  initialDomain?: string;
+}
+
+const { initialDomain = "전체" } = Astro.props;
+const phases = ["Quick Wins", "Foundational", "Efficient", "Optimized"];
+const domains = ["접근 제어", "네트워크 보안", "데이터 보호", "Pod 보안", "컨테이너 보안"];
+const base = import.meta.env.BASE_URL;
+const basePath = base.endsWith("/") ? base : `${base}/`;
+const itemHref = (href: string) => `${basePath}${href.replace(/^\//, "").replace(/\/?$/, "/")}`;
+const filteredDomains = initialDomain === "전체" ? domains : domains.filter((domain) => domain === initialDomain);
+const byDomainAndPhase = (domain: string, phase: string) =>
+  items.filter((item) => item.domain === domain && item.phase === phase);
+const phaseCodes = {
+  "Quick Wins": "QW",
+  Foundational: "FD",
+  Efficient: "EF",
+  Optimized: "OP",
+};
+const itemCode = (item: (typeof items)[number]) =>
+  `${phaseCodes[item.phase as keyof typeof phaseCodes]}-${String(item.order).padStart(3, "0")}`;
+---
+
+<div class="maturity-toolbar" data-maturity-toolbar>
+  <div class="maturity-filter-group" aria-label="성숙도 단계">
+    <span class="maturity-filter-label">단계</span>
+    {["전체", ...phases].map((phase) => (
+      <button
+        type="button"
+        data-filter-type="phase"
+        data-filter-value={phase}
+        aria-pressed={phase === "전체" ? "true" : "false"}
+      >
+        {phase}
+      </button>
+    ))}
+  </div>
+
+  <div class="maturity-filter-group" aria-label="보안 영역">
+    <span class="maturity-filter-label">보안 영역</span>
+    {["전체", ...domains].map((domain) => (
+      <button
+        type="button"
+        data-filter-type="domain"
+        data-filter-value={domain}
+        aria-pressed={domain === initialDomain ? "true" : "false"}
+      >
+        {domain}
+      </button>
+    ))}
+  </div>
+</div>
+
+<div class="maturity-board-shell">
+<div class="maturity-board" data-maturity-board data-selected-phase="all">
+  <div class="maturity-header" aria-hidden="true">
+    <div>보안 영역</div>
+    {phases.map((phase) => <div data-phase-col={phase}>{phase}</div>)}
+  </div>
+
+  {domains.map((domain) => (
+    <section
+      class="maturity-row"
+      data-domain-row={domain}
+      hidden={!filteredDomains.includes(domain)}
+    >
+      <div class="maturity-domain">{domain}</div>
+      {phases.map((phase) => {
+        const phaseItems = byDomainAndPhase(domain, phase);
+        return (
+          <div class="maturity-cell" data-phase={phase} data-phase-cell={phase}>
+            {phaseItems.length > 0 ? (
+              <ul class="maturity-list">
+                {phaseItems.map((item) => (
+                  <li class="maturity-card">
+                    <div class="maturity-card-head">
+                      <span class="maturity-card-code">{itemCode(item)}</span>
+                      <span class="difficulty-badge">{item.difficulty}</span>
+                    </div>
+                    <a href={itemHref(item.href)}>{item.title}</a>
+                    <div class="maturity-meta">
+                      <span class="phase-badge">{item.phase}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span class="maturity-empty">준비 중</span>
+            )}
+          </div>
+        );
+      })}
+    </section>
+  ))}
+</div>
+</div>
+
+<script>
+  for (const toolbar of document.querySelectorAll("[data-maturity-toolbar]")) {
+    const shell = toolbar.nextElementSibling;
+    const board = shell instanceof HTMLElement ? shell.querySelector("[data-maturity-board]") : null;
+    if (!(board instanceof HTMLElement)) continue;
+
+    const buttons = Array.from(toolbar.querySelectorAll("button[data-filter-type]"));
+    const rows = Array.from(board.querySelectorAll("[data-domain-row]"));
+    const phaseParts = Array.from(board.querySelectorAll("[data-phase-col], [data-phase-cell]"));
+    let selectedPhase = "전체";
+    let selectedDomain =
+      buttons
+        .find(
+          (button) =>
+            button.getAttribute("data-filter-type") === "domain" &&
+            button.getAttribute("aria-pressed") === "true",
+        )
+        ?.getAttribute("data-filter-value") ?? "전체";
+
+    const setPressed = (type: string, value: string) => {
+      for (const button of buttons) {
+        if (button.getAttribute("data-filter-type") === type) {
+          button.setAttribute("aria-pressed", String(button.getAttribute("data-filter-value") === value));
+        }
+      }
+    };
+
+    const sync = () => {
+      setPressed("phase", selectedPhase);
+      setPressed("domain", selectedDomain);
+      board.dataset.selectedPhase = selectedPhase === "전체" ? "all" : "filtered";
+
+      for (const row of rows) {
+        const domain = row.getAttribute("data-domain-row");
+        row.toggleAttribute("hidden", selectedDomain !== "전체" && domain !== selectedDomain);
+      }
+
+      for (const part of phaseParts) {
+        const phase = part.getAttribute("data-phase-col") ?? part.getAttribute("data-phase-cell");
+        part.toggleAttribute("hidden", selectedPhase !== "전체" && phase !== selectedPhase);
+      }
+    };
+
+    for (const button of buttons) {
+      button.addEventListener("click", () => {
+        const type = button.getAttribute("data-filter-type");
+        const value = button.getAttribute("data-filter-value") ?? "전체";
+
+        if (type === "phase") {
+          selectedPhase = value;
+        }
+
+        if (type === "domain") {
+          selectedDomain = value;
+        }
+
+        sync();
+      });
+    }
+
+    sync();
+  }
+</script>
