@@ -1,6 +1,6 @@
 # 컨테이너 이미지를 배포 전 스캔하고 Critical/High 취약점 배포를 차단한다
 
-> **Phase:** Quick Wins
+> **Phase:** Foundational
 >
 > **보안 영역:** Pod 보안
 >
@@ -121,7 +121,6 @@ AWS_PROFILE=<PROFILE> aws inspector2 list-findings \
 - ECR 리포지토리 태그가 `IMMUTABLE`, 암호화가 `KMS`로 설정되어 있다.
 - ECR registry scanning configuration이 `ENHANCED` + `CONTINUOUS_SCAN`으로 설정되어 있다.
 - Inspector v2 ECR 상태가 `ENABLED`로 확인된다.
-- Critical/High 발견 시 배포 단계가 실행되지 않는다.
 
 #### Risk 및 미적용 시 영향
 
