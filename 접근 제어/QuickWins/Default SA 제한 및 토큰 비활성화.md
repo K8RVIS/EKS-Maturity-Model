@@ -255,3 +255,18 @@ kubectl exec -n team-a deploy/api -- ls /var/run/secrets/kubernetes.io/serviceac
 - [ ] 일반 애플리케이션 워크로드가 `default` ServiceAccount를 직접 사용하지 않는가?
 - [ ] Kubernetes API 접근이 필요한 워크로드만 전용 ServiceAccount를 사용하고 있는가?
 - [ ] API 접근이 필요 없는 워크로드에는 `automountServiceAccountToken: false`가 적용되어 있는가?
+- [ ] `eks-secure-infra`의 `api` 워크로드가 `default` SA 대신 전용 SA를 사용하도록 수정되었는가?
+
+#### 대규모 환경을 위한 patch 자동화 방안
+
+관리해야 할 리소스가 수백 개 이상인 대규모 클러스터 환경에서는 사람이 일일이 매니페스트를 수정하기 어렵고 누락이 발생할 위험이 크다.
+
+이를 보완하기 위해, **현재 클러스터 내에서 여전히 default SA를 사용 중인 리소스를 자동으로 식별하고 패치를 생성하는 스크립트 기반의 접근 방식을 병행**하여 사용할 수 있다.
+
+**자동화 스크립트의 작동 원리 및 특징**
+
+- **렌더링 결과 기반 탐색**: kustomization.yaml의 실제 렌더링 결과(Overlay)를 기준으로 리소스를 분석한다.
+
+- **타겟팅 패치**: 이미 전용 SA를 명시하여 사용 중인 워크로드(의도적으로 권한을 부여한 대상)는 제외하고, 명시적 설정이 없어 K8s 기본 동작에 의해 default SA가 할당된 리소스만 선별하여 패치 대상으로 선정한다.
+
+- **Kustomize 연동**: 식별된 대상에 대해서만 automountServiceAccountToken: false를 적용하는 default-sa-token-patch.yaml을 동적으로 생성하여, Kustomize 파이프라인에 자동으로 포함시킨다.
