@@ -1,4 +1,4 @@
-# Workload Storage data를 보호한다
+# EBS 기반 Workload Storage data를 보호한다
 
 > **Phase:** Foundational
 >
@@ -364,16 +364,16 @@ kubectl kustomize manifests/base \
 
 이 항목은 아래 보안 기준과 연결된다.
 
-- **AWS Well-Architected Framework - Security Pillar**
+- **[AWS Well-Architected Framework - Security Pillar](https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html)**
   저장 데이터 보호, 암호화 key 관리, 보안 자동화와 연결된다.
-- **EKS Best Practices Guide - Security**
+- **[EKS Best Practices Guide - Security](https://aws.github.io/aws-eks-best-practices/security/)**
   Kubernetes Secret, persistent storage, AWS KMS, 데이터 암호화 원칙과 연결된다.
-- **CIS Controls v8**
+- **[CIS Controls v8](https://www.cisecurity.org/controls/v8)**
   `3.11 Encrypt Sensitive Data at Rest`
   민감 데이터를 저장할 때 강한 암호화를 적용하도록 요구한다.
-- **NIST SP 800-53 Rev.5**
+- **[NIST SP 800-53 Rev.5](https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final)**
   `SC-28 Protection of Information at Rest`, `SC-12 Cryptographic Key Establishment and Management`, `SC-13 Cryptographic Protection`과 연결된다.
-- **Kubernetes Security Checklist**
+- **[Kubernetes Security Checklist](https://kubernetes.io/docs/concepts/security/security-checklist/)**
   워크로드가 사용하는 Secret, volume, storage resource의 접근 통제와 보호 상태를 점검하는 원칙과 연결된다.
 
 ## Assessment 체크리스트
