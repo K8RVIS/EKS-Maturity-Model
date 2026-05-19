@@ -1,4 +1,4 @@
-# Cluster 감사 추적 및 Event Logging 체계 구축
+# Cluster 감사 추적 및 Event Logging 체계를 구축한다
 
 > **Phase:** Efficient
 >
