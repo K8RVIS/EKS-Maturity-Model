@@ -1,6 +1,6 @@
 # Pod 연계 external Secret storage를 사용한다
 
-> **Phase:** Foundational
+> **Phase:** Quick Wins
 >
 > **보안 영역:** 데이터 보호
 >
@@ -343,13 +343,13 @@ kubectl logs deploy/api -n <namespace> --tail=100
 
 이 항목은 아래 보안 기준과 연결된다.
 
-- **Kubernetes Security Checklist**
+- **[Kubernetes Security Checklist](https://kubernetes.io/docs/concepts/security/security-checklist/)**
   Secret 관리, 민감정보 분리, 접근 통제, 기본 보안 점검 원칙과 연결된다.
-- **NIST SP 800-190**
+- **[NIST SP 800-190](https://csrc.nist.gov/publications/detail/sp/800-190/final)**
   컨테이너 이미지, 오케스트레이터, 런타임 환경에서 자격증명과 민감정보 노출을 줄이는 통제와 연결된다.
-- **AWS Well-Architected Framework - Security Pillar**
+- **[AWS Well-Architected Framework - Security Pillar](https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html)**
   자격 증명 보호, 최소 권한, 자동화된 보안 운영, 데이터 보호 원칙과 연결된다.
-- **CIS Kubernetes Benchmark**
+- **[CIS Kubernetes Benchmark](https://www.cisecurity.org/benchmark/kubernetes)**
   Secret 접근 권한 최소화, etcd 암호화, 서비스 계정 권한 관리와 연결된다.
 
 ## Assessment 체크리스트
