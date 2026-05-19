@@ -1,0 +1,90 @@
+[
+  {
+    "title": "Default ServiceAccount 사용을 제한하고 불필요한 토큰 마운트를 비활성화한다",
+    "phase": "Quick Wins",
+    "domain": "접근 제어",
+    "difficulty": "★☆☆",
+    "href": "/quick-wins/default-service-account",
+    "order": 10
+  },
+  {
+    "title": "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다",
+    "phase": "Quick Wins",
+    "domain": "컨테이너 보안",
+    "difficulty": "★☆☆",
+    "href": "/quick-wins/non-root-containers",
+    "order": 20
+  },
+  {
+    "title": "Public API endpoint 접근 CIDR을 신뢰 구간으로 제한한다",
+    "phase": "Quick Wins",
+    "domain": "네트워크 보안",
+    "difficulty": "★☆☆",
+    "href": "/quick-wins/public-api-cidr",
+    "order": 30
+  },
+  {
+    "title": "Ingress와 Load Balancer에서 TLS를 강제한다",
+    "phase": "Quick Wins",
+    "domain": "네트워크 보안",
+    "difficulty": "★☆☆",
+    "href": "/quick-wins/ingress-load-balancer-tls",
+    "order": 40
+  },
+  {
+    "title": "외부 진입점 TLS 인증서를 자동 관리한다",
+    "phase": "Quick Wins",
+    "domain": "데이터 보호",
+    "difficulty": "★☆☆",
+    "href": "/quick-wins/tls-certificate-automation",
+    "order": 50
+  },
+  {
+    "title": "Workload 내 Hardcoded Secret을 제거한다",
+    "phase": "Quick Wins",
+    "domain": "데이터 보호",
+    "difficulty": "★★☆",
+    "href": "/quick-wins/workload-hardcoded-secrets",
+    "order": 60
+  },
+  {
+    "title": "컨테이너 이미지를 배포 전 스캔하고 Critical/High 취약점 배포를 차단한다",
+    "phase": "Quick Wins",
+    "domain": "Pod 보안",
+    "difficulty": "★☆☆",
+    "href": "/quick-wins/container-image-scanning",
+    "order": 70
+  },
+  {
+    "title": "Namespace별 ResourceQuota와 LimitRange를 적용한다",
+    "phase": "Quick Wins",
+    "domain": "Pod 보안",
+    "difficulty": "★☆☆",
+    "href": "/quick-wins/resource-quota-limitrange",
+    "order": 80
+  },
+  {
+    "title": "Kubernetes API endpoint를 private-only로 전환한다",
+    "phase": "Foundational",
+    "domain": "네트워크 보안",
+    "difficulty": "★★☆",
+    "href": "/foundational/private-api-endpoint",
+    "order": 10
+  },
+  {
+    "title": "Worker node와 Pod를 private subnet에 배치한다",
+    "phase": "Foundational",
+    "domain": "네트워크 보안",
+    "difficulty": "미정",
+    "href": "/foundational/private-subnets",
+    "order": 20
+  },
+  {
+    "title": "기본 deny NetworkPolicy를 적용한다",
+    "phase": "Foundational",
+    "domain": "네트워크 보안",
+    "difficulty": "미정",
+    "href": "/foundational/default-deny-networkpolicy",
+    "order": 30
+  }
+]

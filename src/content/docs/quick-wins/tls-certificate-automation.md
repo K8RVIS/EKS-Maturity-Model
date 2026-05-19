@@ -1,13 +1,13 @@
-# 외부 진입점 TLS 인증서를 자동 관리한다
-
-> **Phase:** Quick Wins
->
-> **보안 영역:** 데이터 보호
->
-> **담당:** 공통 (전체 실습)
->
-> **난이도:** ★☆☆
-
+---
+title: "외부 진입점 TLS 인증서를 자동 관리한다"
+description: "왜 필요한가"
+phase: "Quick Wins"
+domain: "데이터 보호"
+difficulty: "★☆☆"
+owner: "공통 (전체 실습)"
+order: 50
+sidebar:
+  order: 50
 ---
 
 #### 왜 필요한가
@@ -24,7 +24,7 @@ EKS에서 외부 사용자가 애플리케이션에 접근할 때 트래픽은 �
 - Ingress가 만드는 애플리케이션 DNS 레코드는 ExternalDNS로 자동 동기화한다.
 - 인증서 만료, 갱신 실패, DNS drift를 검증 가능한 상태로 만든다.
 
-현재 `eks-secure-infra` 실습에서는 `team-d.terraform-study-esc.shop`을 AWS Load Balancer Controller 기반 ALB로 노출하고, ACM 인증서를 Ingress annotation으로 연결한 상태다. [web-ingress-patch.yaml](/Users/esc/Desktop/K8RVIS/eks-secure-infra/manifests/overlays/team-d/web-ingress-patch.yaml:1)은 다음 책임을 가진다.
+현재 `eks-secure-infra` 실습에서는 `team-d.terraform-study-esc.shop`을 AWS Load Balancer Controller 기반 ALB로 노출하고, ACM 인증서를 Ingress annotation으로 연결한 상태다. [web-ingress-patch.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/overlays/team-d/web-ingress-patch.yaml#L1)은 다음 책임을 가진다.
 
 ```yaml
 metadata:
@@ -394,3 +394,4 @@ openssl s_client \
 - [ ] ExternalDNS가 TXT registry와 고유 `txtOwnerId`로 레코드 소유권을 관리하는가?
 - [ ] 인증서 만료 또는 갱신 실패 알림이 운영 채널로 전달되는가?
 - [ ] 인증서 갱신 후에도 ALB listener와 실제 도메인 접속이 자동으로 정상 유지되는지 검증했는가?
+
