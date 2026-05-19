@@ -6,8 +6,12 @@ sidebar:
   order: 1
 ---
 
+import MaturityMatrix from "../../../components/MaturityMatrix.astro";
+
 # Quick Wins
 
 Quick Wins는 실습 환경이나 초기 운영 환경에서 빠르게 적용해 위험을 줄일 수 있는 항목입니다. 기본 ServiceAccount 사용 제한, TLS 강제, 이미지 취약점 스캔, 리소스 제한처럼 명확한 보안 효과를 빠르게 확인할 수 있는 통제를 우선 배치합니다.
 
 각 항목은 적용 전 상태를 확인하고, 매니페스트 또는 클러스터 설정을 변경한 뒤, 명령으로 기대 결과를 검증하는 흐름으로 읽으면 됩니다.
+
+<MaturityMatrix initialPhase="Quick Wins" />

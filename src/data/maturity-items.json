@@ -1,82 +1,82 @@
 [
   {
+    "title": "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다",
+    "phase": "Quick Wins",
+    "domain": "접근 제어",
+    "difficulty": "★☆☆",
+    "href": "/quick-wins/non-root-containers",
+    "order": 10
+  },
+  {
     "title": "Default ServiceAccount 사용을 제한하고 불필요한 토큰 마운트를 비활성화한다",
     "phase": "Quick Wins",
     "domain": "접근 제어",
     "difficulty": "★☆☆",
     "href": "/quick-wins/default-service-account",
-    "order": 10
-  },
-  {
-    "title": "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다",
-    "phase": "Quick Wins",
-    "domain": "컨테이너 보안",
-    "difficulty": "★☆☆",
-    "href": "/quick-wins/non-root-containers",
     "order": 20
-  },
-  {
-    "title": "Public API endpoint 접근 CIDR을 신뢰 구간으로 제한한다",
-    "phase": "Quick Wins",
-    "domain": "네트워크 보안",
-    "difficulty": "★☆☆",
-    "href": "/quick-wins/public-api-cidr",
-    "order": 30
   },
   {
     "title": "Ingress와 Load Balancer에서 TLS를 강제한다",
     "phase": "Quick Wins",
     "domain": "네트워크 보안",
-    "difficulty": "★☆☆",
+    "difficulty": "미정",
     "href": "/quick-wins/ingress-load-balancer-tls",
+    "order": 30
+  },
+  {
+    "title": "Public API endpoint 접근 CIDR을 신뢰 구간으로 제한한다",
+    "phase": "Quick Wins",
+    "domain": "네트워크 보안",
+    "difficulty": "미정",
+    "href": "/quick-wins/public-api-cidr",
     "order": 40
   },
   {
-    "title": "외부 진입점 TLS 인증서를 자동 관리한다",
-    "phase": "Quick Wins",
-    "domain": "데이터 보호",
-    "difficulty": "★☆☆",
-    "href": "/quick-wins/tls-certificate-automation",
-    "order": 50
-  },
-  {
-    "title": "Workload 내 Hardcoded Secret을 제거한다",
+    "title": "Pod 연계 external Secret storage를 사용한다",
     "phase": "Quick Wins",
     "domain": "데이터 보호",
     "difficulty": "★★☆",
-    "href": "/quick-wins/workload-hardcoded-secrets",
-    "order": 60
+    "href": "/quick-wins/aws-secret-manager-사용",
+    "order": 50
   },
   {
-    "title": "컨테이너 이미지를 배포 전 스캔하고 Critical/High 취약점 배포를 차단한다",
-    "phase": "Quick Wins",
-    "domain": "Pod 보안",
-    "difficulty": "★☆☆",
-    "href": "/quick-wins/container-image-scanning",
-    "order": 70
-  },
-  {
-    "title": "Namespace별 ResourceQuota와 LimitRange를 적용한다",
+    "title": "Cluster Resource 사용을 제한한다",
     "phase": "Quick Wins",
     "domain": "Pod 보안",
     "difficulty": "★☆☆",
     "href": "/quick-wins/resource-quota-limitrange",
+    "order": 60
+  },
+  {
+    "title": "Container Image Scan 및 차단을 한다",
+    "phase": "Quick Wins",
+    "domain": "Pod 보안",
+    "difficulty": "★★☆",
+    "href": "/quick-wins/container-image-scanning",
+    "order": 70
+  },
+  {
+    "title": "Prometheus로 클러스터 메트릭 수집 기반을 구성한다",
+    "phase": "Quick Wins",
+    "domain": "Pod 보안",
+    "difficulty": "★★☆",
+    "href": "/quick-wins/prometheus-모니터링-활성화-및-메트릭-수집",
     "order": 80
   },
   {
-    "title": "Kubernetes API endpoint를 private-only로 전환한다",
+    "title": "네임스페이스 내 리소스 접근 제어를 위한 RBAC 정의 및 검증을 수행한다",
     "phase": "Foundational",
-    "domain": "네트워크 보안",
-    "difficulty": "★★☆",
-    "href": "/foundational/private-api-endpoint",
+    "domain": "접근 제어",
+    "difficulty": "미정",
+    "href": "/foundational/cluster내-리소스-접근제어",
     "order": 10
   },
   {
-    "title": "Worker node와 Pod를 private subnet에 배치한다",
+    "title": "EKS 클러스터에 접속할 IAM 신분을 EKS Access Entries 방식으로 관리한다",
     "phase": "Foundational",
-    "domain": "네트워크 보안",
+    "domain": "접근 제어",
     "difficulty": "미정",
-    "href": "/foundational/private-subnets",
+    "href": "/foundational/iam-k8s-mapping",
     "order": 20
   },
   {
@@ -86,5 +86,181 @@
     "difficulty": "미정",
     "href": "/foundational/default-deny-networkpolicy",
     "order": 30
+  },
+  {
+    "title": "Kubernetes API endpoint를 private-only로 전환한다",
+    "phase": "Foundational",
+    "domain": "네트워크 보안",
+    "difficulty": "★★☆",
+    "href": "/foundational/private-api-endpoint",
+    "order": 40
+  },
+  {
+    "title": "Worker node와 Pod를 private subnet에 배치한다",
+    "phase": "Foundational",
+    "domain": "네트워크 보안",
+    "difficulty": "미정",
+    "href": "/foundational/private-subnets",
+    "order": 50
+  },
+  {
+    "title": "EBS 기반 Workload Storage data를 보호한다",
+    "phase": "Foundational",
+    "domain": "데이터 보호",
+    "difficulty": "★☆☆",
+    "href": "/foundational/ebs-기반-workload-storage-data-보호",
+    "order": 60
+  },
+  {
+    "title": "Workload 내 Hardcoded Secret을 탐지하고 Secrets Manager 참조로 제거한다",
+    "phase": "Foundational",
+    "domain": "데이터 보호",
+    "difficulty": "★★☆",
+    "href": "/foundational/workload-내-hardcoded-secret-제거",
+    "order": 70
+  },
+  {
+    "title": "Container Image 취약점 관리",
+    "phase": "Foundational",
+    "domain": "Pod 보안",
+    "difficulty": "★★☆",
+    "href": "/foundational/container-image-취약점-관리",
+    "order": 80
+  },
+  {
+    "title": "Grafana로 클러스터 메트릭을 시각화한다",
+    "phase": "Foundational",
+    "domain": "Pod 보안",
+    "difficulty": "★★☆",
+    "href": "/foundational/grafana-대시보드-연결",
+    "order": 90
+  },
+  {
+    "title": "네임스페이스에 PSS Baseline을 적용하고 비준수 Pod 실행을 차단한다",
+    "phase": "Foundational",
+    "domain": "Pod 보안",
+    "difficulty": "★☆☆",
+    "href": "/foundational/pod-실행-권한-최소화",
+    "order": 100
+  },
+  {
+    "title": "Pod별 IAM Role 부여를 통해 워크로드별 AWS 권한을 분리한다",
+    "phase": "Efficient",
+    "domain": "접근 제어",
+    "difficulty": "미정",
+    "href": "/efficient/pod별-iam-role-부여",
+    "order": 10
+  },
+  {
+    "title": "CoreDNS와 DNS egress 경로를 내부 DNS 경계에 맞게 제한한다",
+    "phase": "Efficient",
+    "domain": "네트워크 보안",
+    "difficulty": "★★☆",
+    "href": "/efficient/coredns와-dns-egress-경로를-내부-dns-경계에-맞게-제한",
+    "order": 20
+  },
+  {
+    "title": "kubelet API 접근을 노드 보안 그룹 경계로 제한한다",
+    "phase": "Efficient",
+    "domain": "네트워크 보안",
+    "difficulty": "★★☆",
+    "href": "/efficient/kubelet-api-접근-제한",
+    "order": 30
+  },
+  {
+    "title": "Secret 접근을 감사하고 추적한다",
+    "phase": "Efficient",
+    "domain": "데이터 보호",
+    "difficulty": "★★☆",
+    "href": "/efficient/secret-접근-감사",
+    "order": 40
+  },
+  {
+    "title": "AlertManager 및 보안 알림 규칙을 추가한다",
+    "phase": "Efficient",
+    "domain": "Pod 보안",
+    "difficulty": "★★☆",
+    "href": "/efficient/alertmanager-및-보안-알림-규칙-추가",
+    "order": 50
+  },
+  {
+    "title": "Cluster 감사 추적 및 Event Logging 체계 구축",
+    "phase": "Efficient",
+    "domain": "Pod 보안",
+    "difficulty": "★★★",
+    "href": "/efficient/cluster-감사-추적-및-event-logging-체계-구축",
+    "order": 60
+  },
+  {
+    "title": "Security Metric 수집 및 Runtime 시각화를 구축한다",
+    "phase": "Efficient",
+    "domain": "Pod 보안",
+    "difficulty": "★★★",
+    "href": "/efficient/security-metric-수집-및-runtime-시각화-구축",
+    "order": 70
+  },
+  {
+    "title": "Break-glass 감사 자동화를 통해 긴급 관리자 접근을 JIT로 부여하고 추적한다",
+    "phase": "Optimized",
+    "domain": "접근 제어",
+    "difficulty": "미정",
+    "href": "/optimized/break-glass-감사-자동화",
+    "order": 10
+  },
+  {
+    "title": "서비스 간 mTLS를 적용한다",
+    "phase": "Optimized",
+    "domain": "네트워크 보안",
+    "difficulty": "★★★",
+    "href": "/optimized/서비스-간-mtls-적용",
+    "order": 20
+  },
+  {
+    "title": "eBPF 기반 네트워크 이상 행위 탐지를 활성화한다",
+    "phase": "Optimized",
+    "domain": "네트워크 보안",
+    "difficulty": "★★★",
+    "href": "/optimized/ebpf-기반-네트워크-이상-행위-탐지-활성화",
+    "order": 30
+  },
+  {
+    "title": "Falco 기반 Secret 접근 감사를 보완한다",
+    "phase": "Optimized",
+    "domain": "데이터 보호",
+    "difficulty": "★★★",
+    "href": "/optimized/falco-기반-secret-접근-감사",
+    "order": 40
+  },
+  {
+    "title": "K8s 인증서 수명주기를 자동화한다",
+    "phase": "Optimized",
+    "domain": "데이터 보호",
+    "difficulty": "★★☆",
+    "href": "/optimized/k8s-인증서-수명주기-자동화",
+    "order": 50
+  },
+  {
+    "title": "Container Image 정책을 관리한다",
+    "phase": "Optimized",
+    "domain": "Pod 보안",
+    "difficulty": "★★★",
+    "href": "/optimized/container-image-정책-관리",
+    "order": 60
+  },
+  {
+    "title": "Container System Call 제어",
+    "phase": "Optimized",
+    "domain": "Pod 보안",
+    "difficulty": "★★★",
+    "href": "/optimized/container-system-call-제어",
+    "order": 70
+  },
+  {
+    "title": "Runtime 위협탐지",
+    "phase": "Optimized",
+    "domain": "Pod 보안",
+    "difficulty": "★★★",
+    "href": "/optimized/runtime-위협탐지",
+    "order": 80
   }
 ]
