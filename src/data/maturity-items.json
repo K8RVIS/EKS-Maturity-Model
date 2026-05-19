@@ -24,14 +24,6 @@
     "order": 30
   },
   {
-    "title": "Public API endpoint 접근 CIDR을 신뢰 구간으로 제한한다",
-    "phase": "Quick Wins",
-    "domain": "네트워크 보안",
-    "difficulty": "미정",
-    "href": "/quick-wins/public-api-cidr",
-    "order": 40
-  },
-  {
     "title": "Pod 연계 external Secret storage를 사용한다",
     "phase": "Quick Wins",
     "domain": "데이터 보호",
