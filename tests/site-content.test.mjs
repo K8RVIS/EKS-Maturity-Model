@@ -132,25 +132,40 @@ test("Starlight table of contents is disabled for wider content pages", () => {
   assert.match(config, /tableOfContents:\s*false/);
 });
 
-test("maturity model uses the domain by phase matrix view", () => {
+test("maturity model renders a table-only domain by phase matrix view", () => {
   const component = readFileSync(path.join(root, "src/components/MaturityMatrix.astro"), "utf8");
   const styles = readFileSync(path.join(root, "src/styles/custom.css"), "utf8");
   const model = readFileSync(path.join(docsRoot, "model.mdx"), "utf8");
 
-  assert.match(component, /data-maturity-toolbar/);
-  assert.match(component, /data-filter-type="phase"/);
-  assert.match(component, /data-filter-type="domain"/);
+  assert.doesNotMatch(component, /data-maturity-toolbar/);
+  assert.doesNotMatch(component, /data-filter-type="phase"/);
+  assert.doesNotMatch(component, /data-filter-type="domain"/);
+  assert.doesNotMatch(component, /maturity-card-code/);
+  assert.doesNotMatch(component, /difficulty-badge/);
+  assert.doesNotMatch(component, /itemCode/);
+  assert.doesNotMatch(component, /selectedPhase/);
+  assert.match(component, /maturity-meta/);
+  assert.match(component, /phase-badge/);
+  assert.match(component, /item-badge/);
+  assert.match(component, /단계:/);
+  assert.match(component, /항목:/);
   assert.match(component, /data-phase-col/);
   assert.match(component, /data-phase-cell/);
-  assert.match(component, /selectedPhase/);
+  assert.match(component, /layout === "phase-domain"/);
   assert.doesNotMatch(component, /data-phase-difficulty-table/);
   assert.match(styles, /\.maturity-board/);
-  assert.match(styles, /\.maturity-card-code/);
+  assert.match(styles, /\.maturity-meta/);
+  assert.match(styles, /\.phase-badge/);
+  assert.match(styles, /\.item-badge/);
+  assert.doesNotMatch(styles, /\.maturity-toolbar/);
+  assert.doesNotMatch(styles, /\.maturity-card-code/);
+  assert.doesNotMatch(styles, /\.difficulty-badge/);
   assert.match(model, /행은 보안 영역/);
   assert.match(model, /열은 성숙도 단계/);
+  assert.doesNotMatch(model, /필터/);
 });
 
-test("phase index pages reuse the model matrix view without difficulty criteria", () => {
+test("phase index pages use transposed table-only matrix views", () => {
   assert.equal(existsSync(path.join(root, "src/components/PhaseDifficultyMatrix.astro")), false);
 
   for (const slug of ["quick-wins", "foundational", "efficient", "optimized"]) {
@@ -158,6 +173,7 @@ test("phase index pages reuse the model matrix view without difficulty criteria"
 
     assert.match(page, /import MaturityMatrix/);
     assert.match(page, /<MaturityMatrix initialPhase=/);
+    assert.match(page, /layout="phase-domain"/);
     assert.doesNotMatch(page, /난이도 기준/);
     assert.doesNotMatch(page, /난이도별 보안 영역 매트릭스/);
     assert.doesNotMatch(page, /행은 난이도/);
