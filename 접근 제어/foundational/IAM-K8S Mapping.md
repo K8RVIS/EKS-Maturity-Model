@@ -10,7 +10,7 @@
 
 ---
 
-#### 개요
+## 왜 필요한가
 
 EKS 클러스터에 접속하는 IAM 사용자 또는 IAM 역할은 Kubernetes API 서버에서 인증된 주체로 매핑되어야 한다. 기존에는 이 매핑을 `aws-auth` ConfigMap에 직접 작성하는 방식이 일반적이었다.
 
@@ -341,13 +341,22 @@ kubectl delete pod [pod명] -n [namespace명]
 - **AWS 비용 발생 여부 및 예상 규모:** 없음. EKS Access Entries와 Access Policy 연결 자체에는 별도 비용이 발생하지 않는다.
 - **스픽스 vs 적용 도구 선택 및 비용 차이:** 필수 비용 없음. 대규모 환경에서는 Terraform, CloudFormation, AWS CDK 같은 IaC 도구로 Access Entry를 코드화하여 관리할 수 있다.
 
+## Assessment 체크리스트
+
+- [ ] 클러스터 인증 모드가 `API_AND_CONFIG_MAP`로 설정되어 있는가?
+- [ ] 권한을 부여할 IAM 사용자 또는 IAM 역할 ARN을 정확히 확인했는가?
+- [ ] IAM Principal별 Access Entry가 생성되어 있는가?
+- [ ] 각 Access Entry에 적절한 AWS 관리형 Access Policy가 연결되어 있는가?
+- [ ] 네임스페이스 범위 권한이 필요한 경우 `accessScope`가 `namespace`로 제한되어 있는가?
+- [ ] 클러스터 전체 권한이 필요한 경우 사유와 대상 IAM 역할이 명확한가?
+- [ ] 권한을 부여받은 IAM 주체로 실제 `kubectl` 접근 테스트를 수행했는가?
+
 ## 참고 자료
 
 - [Amazon EKS - Grant IAM users access to Kubernetes with EKS access entries](https://docs.aws.amazon.com/eks/latest/userguide/access-entries.html)
 - [Amazon EKS - Associate access policies with access entries](https://docs.aws.amazon.com/eks/latest/userguide/access-policies.html)
 - [Amazon EKS - Changing authentication mode](https://docs.aws.amazon.com/eks/latest/userguide/setting-up-access-entries.html)
 - [Amazon EKS Best Practices - Identity and Access Management](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html)
-- [Kubernetes - Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
 ## 연결된 보안 가이드라인 항목
 
@@ -365,13 +374,3 @@ kubectl delete pod [pod명] -n [namespace명]
 - **NSA/CISA Kubernetes Hardening Guidance**
   `RBAC and least privilege`
   사용자와 역할에는 업무 수행에 필요한 최소 권한만 부여하고, 관리자 권한은 엄격히 제한할 것을 권고한다.
-
-## Assessment 체크리스트
-
-- [ ] 클러스터 인증 모드가 `API_AND_CONFIG_MAP`로 설정되어 있는가?
-- [ ] 권한을 부여할 IAM 사용자 또는 IAM 역할 ARN을 정확히 확인했는가?
-- [ ] IAM Principal별 Access Entry가 생성되어 있는가?
-- [ ] 각 Access Entry에 적절한 AWS 관리형 Access Policy가 연결되어 있는가?
-- [ ] 네임스페이스 범위 권한이 필요한 경우 `accessScope`가 `namespace`로 제한되어 있는가?
-- [ ] 클러스터 전체 권한이 필요한 경우 사유와 대상 IAM 역할이 명확한가?
-- [ ] 권한을 부여받은 IAM 주체로 실제 `kubectl` 접근 테스트를 수행했는가?
