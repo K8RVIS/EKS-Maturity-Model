@@ -1,13 +1,13 @@
-# EKS 클러스터에 접속할 IAM 신분을 EKS Access Entries 방식으로 관리한다
-
-> **Phase:** Foundational
->
-> **보안 영역:** 접근 제어
->
-> **대상:** 공통 (전체 실습)
->
-> **난이도:** 기본
-
+---
+title: "EKS 클러스터에 접속할 IAM 신분을 EKS Access Entries 방식으로 관리한다"
+description: "EKS 클러스터에 접속하는 IAM 사용자 또는 IAM 역할은 Kubernetes API 서버에서 인증된 주체로 매핑되어야 한다. 기존에는 이 매핑을 `aws-auth` ConfigMap에 직접 작성하는 방식이 일반적이었다."
+phase: "Foundational"
+domain: "접근 제어"
+difficulty: "미정"
+owner: "공통 (전체 실습)"
+order: 20
+sidebar:
+  order: 20
 ---
 
 ## 왜 필요한가
@@ -374,3 +374,4 @@ kubectl delete pod [pod명] -n [namespace명]
 - **NSA/CISA Kubernetes Hardening Guidance**
   `RBAC and least privilege`
   사용자와 역할에는 업무 수행에 필요한 최소 권한만 부여하고, 관리자 권한은 엄격히 제한할 것을 권고한다.
+

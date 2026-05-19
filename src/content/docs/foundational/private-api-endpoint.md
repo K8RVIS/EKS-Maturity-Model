@@ -1,13 +1,13 @@
 ---
 title: "Kubernetes API endpoint를 private-only로 전환한다"
-description: "왜 필요한가"
+description: "EKS Kubernetes API Server는 `kubectl`, Terraform, GitOps 컨트롤러, 클러스터 애드온, 운영 자동화가 클러스터를 제어할 때 사용하는 관리 평면 진입점이다. IAM 인증과 Kubernetes RBAC가 적용되어 있더라도 API e"
 phase: "Foundational"
 domain: "네트워크 보안"
 difficulty: "★★☆"
 owner: "공통 (전체 실습)"
-order: 10
+order: 40
 sidebar:
-  order: 10
+  order: 40
 ---
 
 ## 왜 필요한가

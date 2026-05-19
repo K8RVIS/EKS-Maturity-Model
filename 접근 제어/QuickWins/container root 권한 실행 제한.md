@@ -10,7 +10,7 @@
 
 ---
 
-#### 왜 필요한가
+## 왜 필요한가
 
 컨테이너 이미지는 별도 설정이 없으면 root 사용자로 실행되는 경우가 많다. 컨테이너 런타임과 커널 격리가 있더라도, 컨테이너 내부 프로세스가 UID 0 권한을 가지면 침해 사고가 발생했을 때 피해 범위가 커진다.
 
@@ -306,13 +306,21 @@ kubectl run root-test -n <namespace명> \
 - **AWS 비용 발생 여부 및 예상 규모:** 없음. Kubernetes 기본 보안 컨텍스트와 매니페스트 수정만으로 적용 가능
 - **오픈소스 vs 상용 도구 선택 시 비용 차이:** 필수 비용 없음. 정책 검증 자동화가 필요하면 Kyverno, OPA Gatekeeper 같은 오픈소스 정책 엔진을 추가로 사용할 수 있다.
 
+## Assessment 체크리스트
+
+- [ ] Deployment 또는 Pod에 `runAsNonRoot: true`가 설정되어 있는가?
+- [ ] `runAsUser`와 `runAsGroup`이 0이 아닌 UID/GID로 명시되어 있는가?
+- [ ] 컨테이너에 `readOnlyRootFilesystem: true`가 설정되어 있는가?
+- [ ] 컨테이너에 `allowPrivilegeEscalation: false`이 적용되어 있는가?
+- [ ] 애플리케이션이 쓰는 경로가 루트 파일시스템이 아니라 명시적인 볼륨으로 분리되어 있는가?
+- [ ] `kubectl exec -- id` 결과가 `uid=0(root)`가 아님을 확인했는가?
+- [ ] 루트 파일시스템 쓰기 시도 시 `Read-only file system` 오류가 발생하는가?
+
 ## 참고 자료
 
 - [Amazon EKS Best Practices - Identity and Access Management](https://docs.aws.amazon.com/ko_kr/eks/latest/best-practices/identity-and-access-management.html#_identities_and_credentials_for_eks_pods_recommendations)
 - [Kubernetes - Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)
 - [Kubernetes - Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/)
-- [CIS Kubernetes Benchmark v1.12.0](../CIS_Kubernetes_Benchmark_V1.12.0_PDF.md)
-- [NSA/CISA Kubernetes Hardening Guidance](../CTR_KUBERNETES_HARDENING_GUIDANCE_1.2_20220829.md)
 
 ## 연계된 보안 가이드라인 항목
 
@@ -323,19 +331,9 @@ kubectl run root-test -n <namespace명> \
   컨테이너가 root 사용자로 실행되는 것을 일반적으로 허용하지 말고, `MustRunAsNonRoot` 또는 UID 0을 제외한 범위 정책을 사용하도록 권고한다.
 - **Kubernetes Pod Security Standards**
   `Restricted` 프로파일은 non-root 실행, privilege escalation 제한, capability 축소, seccomp 적용 등 일반 애플리케이션 워크로드에 필요한 강한 기본 보안 기준을 제공한다.
+
 - **NSA/CISA Kubernetes Hardening Guidance**
   `Non-root containers and rootless container engines`
   컨테이너 애플리케이션을 non-root 사용자로 빌드하고 실행하도록 권고하며, Kubernetes `securityContext`뿐 아니라 이미지 빌드 단계에서 non-root 실행을 통합하는 것이 더 높은 보증을 제공한다고 설명한다.
-- **NSA/CISA Kubernetes Hardening Guidance**
   `Appendix B: Example deployment template for read-only file system`
   컨테이너의 루트 파일시스템을 읽기 전용으로 설정하고, 쓰기가 필요한 위치만 별도 볼륨으로 제공하는 패턴을 제시한다.
-
-## Assessment 체크리스트
-
-- [ ] Deployment 또는 Pod에 `runAsNonRoot: true`가 설정되어 있는가?
-- [ ] `runAsUser`와 `runAsGroup`이 0이 아닌 UID/GID로 명시되어 있는가?
-- [ ] 컨테이너에 `readOnlyRootFilesystem: true`가 설정되어 있는가?
-- [ ] 컨테이너에 `allowPrivilegeEscalation: false`이 적용되어 있는가?
-- [ ] 애플리케이션이 쓰는 경로가 루트 파일시스템이 아니라 명시적인 볼륨으로 분리되어 있는가?
-- [ ] `kubectl exec -- id` 결과가 `uid=0(root)`가 아님을 확인했는가?
-- [ ] 루트 파일시스템 쓰기 시도 시 `Read-only file system` 오류가 발생하는가?

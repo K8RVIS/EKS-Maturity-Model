@@ -1,13 +1,13 @@
-# 네임스페이스 내 리소스 접근 제어를 위한 RBAC 정의 및 검증을 수행한다
-
-> **Phase:** Foundational
->
-> **보안 영역:** 접근 제어
->
-> **대상:** 공통 (전체 실습)
->
-> **난이도:** 기본
-
+---
+title: "네임스페이스 내 리소스 접근 제어를 위한 RBAC 정의 및 검증을 수행한다"
+description: "RBAC(Role-Based Access Control)는 Kubernetes 클러스터 내부의 사용자, 그룹, ServiceAccount, Pod가 Kubernetes 리소스에 대해 어떤 작업을 수행할 수 있는지 정의하는 권한 제어 체계이다."
+phase: "Foundational"
+domain: "접근 제어"
+difficulty: "미정"
+owner: "공통 (전체 실습)"
+order: 10
+sidebar:
+  order: 10
 ---
 
 ## 왜 필요한가
@@ -432,3 +432,4 @@ ClusterRoleBinding을 적용했다면 기대 결과는 `yes`이다. 적용하지
 - **NSA/CISA Kubernetes Hardening Guidance**
   `RBAC and least privilege`
   사용자와 ServiceAccount에 필요한 최소 권한만 부여하고, 클러스터 전체 권한은 엄격히 제한할 것을 권고한다.
+
