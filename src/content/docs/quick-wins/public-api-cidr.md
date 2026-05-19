@@ -1,13 +1,13 @@
 ---
 title: "Public API endpoint 접근 CIDR을 신뢰 구간으로 제한한다"
-description: "왜 필요한가"
+description: "EKS 클러스터의 Kubernetes API 서버 엔드포인트는 kubectl, Terraform, GitOps 컨트롤러, 운영 자동화가 클러스터를 제어할 때 사용하는 관리 평면 진입점이다. <br> 인증과 인가는 IAM, EKS access entry 또는 Kubern"
 phase: "Quick Wins"
 domain: "네트워크 보안"
-difficulty: "★☆☆"
+difficulty: "미정"
 owner: "공통 (전체 실습)"
-order: 30
+order: 40
 sidebar:
-  order: 30
+  order: 40
 ---
 
 ## 왜 필요한가
@@ -249,9 +249,8 @@ aws eks describe-cluster \
 - **운영 리스크:** CIDR 제한을 잘못 적용하면 운영자, CI/CD, 노드, Fargate Pod, GitOps 도구의 API 접근이 차단될 수 있다. 변경 전 허용해야 할 egress IP와 Private Endpoint 경로를 확인해야 한다.
 - **심각도:** **높음**. API 서버는 클러스터 관리 평면이므로, 인터넷 전체에 노출된 상태는 인증 실패만으로 끝나지 않고 지속적인 스캐닝과 자격 증명 오남용 시도에 노출된다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
-- **담당자 및 예상 소요 시간:** 플랫폼 엔지니어 1명 기준으로 현황 점검 30분, CIDR 식별 및 적용 30분~1시간, 외부망 검증 30분 내외
 - **AWS 비용 발생 여부 및 예상 규모:** CIDR 제한 자체에는 추가 비용이 없다.
 - **간접 비용:** Private Endpoint 전용 운영으로 전환할 경우 VPN, Direct Connect, Transit Gateway, Bastion, SSM Session Manager, CI/CD runner 네트워크 구성 비용이 별도로 발생할 수 있다.
 - **오픈소스 vs 상용 도구 선택 시 비용 차이:** 필수 도구 비용은 없다. 정책 검증 자동화가 필요하면 Checkov, tfsec/Trivy, OPA 같은 도구로 IaC에서 `0.0.0.0/0`을 차단할 수 있다.

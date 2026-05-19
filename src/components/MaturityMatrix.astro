@@ -3,11 +3,12 @@ import items from "../data/maturity-items.json";
 
 interface Props {
   initialDomain?: string;
+  initialPhase?: string;
 }
 
-const { initialDomain = "전체" } = Astro.props;
+const { initialDomain = "전체", initialPhase = "전체" } = Astro.props;
 const phases = ["Quick Wins", "Foundational", "Efficient", "Optimized"];
-const domains = ["접근 제어", "네트워크 보안", "데이터 보호", "Pod 보안", "컨테이너 보안"];
+const domains = ["접근 제어", "네트워크 보안", "데이터 보호", "Pod 보안"];
 const base = import.meta.env.BASE_URL;
 const basePath = base.endsWith("/") ? base : `${base}/`;
 const itemHref = (href: string) => `${basePath}${href.replace(/^\//, "").replace(/\/?$/, "/")}`;
@@ -22,6 +23,7 @@ const phaseCodes = {
 };
 const itemCode = (item: (typeof items)[number]) =>
   `${phaseCodes[item.phase as keyof typeof phaseCodes]}-${String(item.order).padStart(3, "0")}`;
+const isPhaseVisible = (phase: string) => initialPhase === "전체" || phase === initialPhase;
 ---
 
 <div class="maturity-toolbar" data-maturity-toolbar>
@@ -32,7 +34,7 @@ const itemCode = (item: (typeof items)[number]) =>
         type="button"
         data-filter-type="phase"
         data-filter-value={phase}
-        aria-pressed={phase === "전체" ? "true" : "false"}
+        aria-pressed={phase === initialPhase ? "true" : "false"}
       >
         {phase}
       </button>
@@ -55,47 +57,47 @@ const itemCode = (item: (typeof items)[number]) =>
 </div>
 
 <div class="maturity-board-shell">
-<div class="maturity-board" data-maturity-board data-selected-phase="all">
-  <div class="maturity-header" aria-hidden="true">
-    <div>보안 영역</div>
-    {phases.map((phase) => <div data-phase-col={phase}>{phase}</div>)}
-  </div>
+  <div class="maturity-board" data-maturity-board data-selected-phase={initialPhase === "전체" ? "all" : "filtered"}>
+    <div class="maturity-header" aria-hidden="true">
+      <div>보안 영역</div>
+      {phases.map((phase) => <div data-phase-col={phase} hidden={!isPhaseVisible(phase)}>{phase}</div>)}
+    </div>
 
-  {domains.map((domain) => (
-    <section
-      class="maturity-row"
-      data-domain-row={domain}
-      hidden={!filteredDomains.includes(domain)}
-    >
-      <div class="maturity-domain">{domain}</div>
-      {phases.map((phase) => {
-        const phaseItems = byDomainAndPhase(domain, phase);
-        return (
-          <div class="maturity-cell" data-phase={phase} data-phase-cell={phase}>
-            {phaseItems.length > 0 ? (
-              <ul class="maturity-list">
-                {phaseItems.map((item) => (
-                  <li class="maturity-card">
-                    <div class="maturity-card-head">
-                      <span class="maturity-card-code">{itemCode(item)}</span>
-                      <span class="difficulty-badge">{item.difficulty}</span>
-                    </div>
-                    <a href={itemHref(item.href)}>{item.title}</a>
-                    <div class="maturity-meta">
-                      <span class="phase-badge">{item.phase}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <span class="maturity-empty">준비 중</span>
-            )}
-          </div>
-        );
-      })}
-    </section>
-  ))}
-</div>
+    {domains.map((domain) => (
+      <section
+        class="maturity-row"
+        data-domain-row={domain}
+        hidden={!filteredDomains.includes(domain)}
+      >
+        <div class="maturity-domain">{domain}</div>
+        {phases.map((phase) => {
+          const phaseItems = byDomainAndPhase(domain, phase);
+          return (
+            <div class="maturity-cell" data-phase={phase} data-phase-cell={phase} hidden={!isPhaseVisible(phase)}>
+              {phaseItems.length > 0 ? (
+                <ul class="maturity-list">
+                  {phaseItems.map((item) => (
+                    <li class="maturity-card">
+                      <div class="maturity-card-head">
+                        <span class="maturity-card-code">{itemCode(item)}</span>
+                        <span class="difficulty-badge">{item.difficulty}</span>
+                      </div>
+                      <a href={itemHref(item.href)}>{item.title}</a>
+                      <div class="maturity-meta">
+                        <span class="phase-badge">{item.phase}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <span class="maturity-empty">준비 중</span>
+              )}
+            </div>
+          );
+        })}
+      </section>
+    ))}
+  </div>
 </div>
 
 <script>
@@ -107,7 +109,14 @@ const itemCode = (item: (typeof items)[number]) =>
     const buttons = Array.from(toolbar.querySelectorAll("button[data-filter-type]"));
     const rows = Array.from(board.querySelectorAll("[data-domain-row]"));
     const phaseParts = Array.from(board.querySelectorAll("[data-phase-col], [data-phase-cell]"));
-    let selectedPhase = "전체";
+    let selectedPhase =
+      buttons
+        .find(
+          (button) =>
+            button.getAttribute("data-filter-type") === "phase" &&
+            button.getAttribute("aria-pressed") === "true",
+        )
+        ?.getAttribute("data-filter-value") ?? "전체";
     let selectedDomain =
       buttons
         .find(
