@@ -1,0 +1,416 @@
+{
+  "generated_from": [
+    "src/content/docs/quick-wins",
+    "src/content/docs/foundational",
+    "src/data/maturity-items.json"
+  ],
+  "items": [
+    {
+      "item_id": "foundational/container-image-취약점-관리",
+      "phase": "Foundational",
+      "domain": "Pod 보안",
+      "title": "Container Image 취약점 관리",
+      "difficulty": "★★☆",
+      "href": "/foundational/container-image-취약점-관리",
+      "checks": [
+        "EventBridge Rule이 CRITICAL/HIGH Inspector findings를 정상 감지하는가?",
+        "SNS Topic이 생성되어 있고 이메일 구독이 확인 완료 상태인가?",
+        "Inspector finding 발생 시 담당자에게 이메일 알림이 수신되는가?",
+        "취약점 심각도별 판단 기준과 조치 기한이 문서화되어 있는가?",
+        "CRITICAL findings에 대한 24시간 내 조치 프로세스가 수립되어 있는가?"
+      ],
+      "verify_commands": [
+        "AWS_PROFILE=<PROFILE> aws events describe-rule \\\n--name <project_name>-inspector-findings \\\n--region ap-northeast-2 \\\n--query '{State:State,EventPattern:EventPattern}'",
+        "AWS_PROFILE=<PROFILE> aws sns list-topics \\\n--region ap-northeast-2 \\\n--query \"Topics[?contains(TopicArn, 'inspector-alerts')]\"",
+        "AWS_PROFILE=<PROFILE> aws sns list-subscriptions-by-topic \\\n--topic-arn <SNS_TOPIC_ARN> \\\n--region ap-northeast-2 \\\n--query 'Subscriptions[*].{Protocol:Protocol,Endpoint:Endpoint,Status:SubscriptionArn}'",
+        "AWS_PROFILE=<PROFILE> aws events put-events \\\n--region ap-northeast-2 \\\n--entries '[{\n\"Source\": \"aws.inspector2\",\n\"DetailType\": \"Inspector2 Finding\",\n\"Detail\": \"{\\\"severity\\\":\\\"CRITICAL\\\",\\\"title\\\":\\\"[테스트] Critical 취약점 발견\\\",\\\"description\\\":\\\"EventBridge-SNS 연결 테스트\\\",\\\"status\\\":\\\"ACTIVE\\\",\\\"resources\\\":[{\\\"type\\\":\\\"AWS_ECR_CONTAINER_IMAGE\\\",\\\"details\\\":{\\\"awsEcrContainerImage\\\":{\\\"imageHash\\\":\\\"sha256:test\\\"}}}]}\",\n\"EventBusName\": \"default\"\n}]'"
+      ],
+      "source_reference": "src/content/docs/foundational/container-image-취약점-관리.md"
+    },
+    {
+      "item_id": "foundational/grafana-대시보드-연결",
+      "phase": "Foundational",
+      "domain": "Pod 보안",
+      "title": "Grafana로 클러스터 메트릭을 시각화한다",
+      "difficulty": "★★☆",
+      "href": "/foundational/grafana-대시보드-연결",
+      "checks": [
+        "Grafana Pod가 `Running` 상태인가?",
+        "Grafana PVC가 `Bound`(gp3-encrypted)인가?",
+        "Grafana UI 로그인이 가능한가?",
+        "Prometheus 데이터소스가 정상 연결(`Data source is working`)되어 있는가?",
+        "`grafana_admin_password`가 코드에 하드코딩되지 않고 환경변수로 주입되는가?"
+      ],
+      "verify_commands": [
+        "kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana\nkubectl get svc -n monitoring | grep grafana",
+        "kubectl get pvc -n monitoring | grep grafana\nkubectl describe pvc -n monitoring | grep -A5 grafana",
+        "kubectl get ingress -n monitoring",
+        "kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80"
+      ],
+      "source_reference": "src/content/docs/foundational/grafana-대시보드-연결.md"
+    },
+    {
+      "item_id": "foundational/pod-실행-권한-최소화",
+      "phase": "Foundational",
+      "domain": "Pod 보안",
+      "title": "네임스페이스에 PSS Baseline을 적용하고 비준수 Pod 실행을 차단한다",
+      "difficulty": "★☆☆",
+      "href": "/foundational/pod-실행-권한-최소화",
+      "checks": [
+        "모든 팀 네임스페이스에 `pod-security.kubernetes.io/enforce=baseline` 레이블이 설정되어 있는가?",
+        "`privileged: true` Pod 생성이 거부되는가?",
+        "기존 운영 워크로드가 PSS Baseline 기준에서 정상 실행되는가?"
+      ],
+      "verify_commands": [
+        "kubectl run test-privileged \\\n--image=nginx \\\n--overrides='{\"spec\":{\"containers\":[{\"name\":\"c\",\"image\":\"nginx\",\"securityContext\":{\"privileged\":true}}]}}' \\\n-n team-a \\\n--restart=Never",
+        "kubectl get namespaces -l 'pod-security.kubernetes.io/enforce=baseline' \\\n-o custom-columns='NAME:.metadata.name,ENFORCE:.metadata.labels.pod-security\\.kubernetes\\.io/enforce'"
+      ],
+      "source_reference": "src/content/docs/foundational/pod-실행-권한-최소화.md"
+    },
+    {
+      "item_id": "foundational/default-deny-networkpolicy",
+      "phase": "Foundational",
+      "domain": "네트워크 보안",
+      "title": "기본 deny NetworkPolicy를 적용한다",
+      "difficulty": "미정",
+      "href": "/foundational/default-deny-networkpolicy",
+      "checks": [
+        "사용 중인 CNI 또는 정책 엔진이 NetworkPolicy를 실제로 집행하는가?",
+        "`team-d` Namespace에 `default-deny-ingress`와 `default-deny-egress`가 적용되어 있는가?",
+        "DNS Egress 허용 정책이 있어 Service 이름 해석이 가능한가?",
+        "`web -> api`, `api -> db`처럼 필요한 통신만 명시적으로 허용되어 있는가?",
+        "임의 테스트 Deployment Pod에서 `api`, `db`, `web` 접근이 차단되는가?",
+        "`PolicyEndpoint` 또는 정책 엔진 상태를 통해 리소스 선언이 아닌 실제 집행을 검증했는가?",
+        "`team-d`에서 검증 후 모든 워크로드 Namespace로 확장할 계획이 있는가?"
+      ],
+      "verify_commands": [
+        "kubectl get networkpolicy -n team-d\nkubectl describe networkpolicy -n team-d",
+        "kubectl get policyendpoints -A\nkubectl -n team-d get policyendpoints",
+        "kubectl -n team-d create deployment netshoot-after --image=nicolaka/netshoot -- sleep 3600\nkubectl -n team-d wait --for=condition=available deployment/netshoot-after --timeout=60s\nPOD=$(kubectl -n team-d get pod -l app=netshoot-after -o jsonpath='{.items[0].metadata.name}')\nkubectl -n team-d exec -it \"$POD\" -- sh",
+        "kubectl -n team-d get pods --show-labels\nkubectl -n team-d describe networkpolicy allow-web-to-api\nkubectl -n team-d describe networkpolicy allow-api-to-db"
+      ],
+      "source_reference": "src/content/docs/foundational/default-deny-networkpolicy.md"
+    },
+    {
+      "item_id": "foundational/private-api-endpoint",
+      "phase": "Foundational",
+      "domain": "네트워크 보안",
+      "title": "Kubernetes API endpoint를 private-only로 전환한다",
+      "difficulty": "★★☆",
+      "href": "/foundational/private-api-endpoint",
+      "checks": [
+        "EKS cluster의 `endpointPublicAccess`가 `false`인가?",
+        "EKS cluster의 `endpointPrivateAccess`가 `true`인가?",
+        "EKS endpoint DNS가 운영자 VPN 경로에서 `10.0.0.0/16` 내부 IP로 해석되는가?",
+        "EKS cluster security group이 VPN VPC CIDR `172.31.0.0/16`에서 TCP 443 접근을 허용하는가?",
+        "EKS VPC와 VPN VPC의 VPC Peering 상태가 `active`인가?",
+        "EKS VPC route table에 `172.31.0.0/16 -> pcx-*` route가 있는가?",
+        "VPN VPC route table에 `10.0.0.0/16 -> pcx-*` route가 있는가?",
+        "VPN EC2가 라우터/exit node로 동작할 경우 source/destination check가 꺼져 있는가?",
+        "VPN 내부 또는 연결망에서 `curl \"${ENDPOINT}/readyz\"`가 private IP로 `200`을 반환하는가?",
+        "VPN 외부 또는 연결망 밖에서는 Kubernetes API endpoint 접근이 실패하는가?",
+        "`kubectl get nodes` 또는 `kubectl get --raw=/readyz`가 내부 경로에서 정상 동작하는가?"
+      ],
+      "verify_commands": [
+        "terraform -chdir=modules/eks test\nterraform -chdir=modules/vpc-peering test\nterraform -chdir=modules/eks validate\nterraform -chdir=modules/vpc-peering validate\nterraform -chdir=environments/infra validate"
+      ],
+      "source_reference": "src/content/docs/foundational/private-api-endpoint.md"
+    },
+    {
+      "item_id": "foundational/private-subnets",
+      "phase": "Foundational",
+      "domain": "네트워크 보안",
+      "title": "Worker node와 Pod를 private subnet에 배치한다",
+      "difficulty": "미정",
+      "href": "/foundational/private-subnets",
+      "checks": [
+        "VPC가 최소 2개 AZ에 Public Subnet과 Private Subnet 쌍을 가지고 있는가?",
+        "managed node group의 subnet ID가 Private Subnet ID와 일치하는가?",
+        "Worker node EC2 instance에 Public IP가 없는가?",
+        "EKS control plane 연결 subnet이 Private Subnet 중심으로 구성되어 있는가?",
+        "Public Subnet route table의 default route가 Internet Gateway를 향하는가?",
+        "Private Subnet route table의 default route가 `fck-nat` primary ENI를 향하는가?",
+        "Public Subnet에는 `kubernetes.io/role/elb=1` tag가 있는가?",
+        "Private Subnet에는 `kubernetes.io/role/internal-elb=1` tag가 있는가?",
+        "internet-facing Load Balancer는 Public Subnet에, internal Load Balancer는 Private Subnet에 생성되는가?",
+        "`terraform test`로 infra, VPC, EKS 모듈의 subnet 배치 검증이 통과하는가?"
+      ],
+      "verify_commands": [
+        "cd environments/infra\nterraform fmt -check\nterraform validate\nterraform test",
+        "cd ../../modules/vpc\nterraform fmt -check\nterraform validate\nterraform test",
+        "cd ../eks\nterraform fmt -check\nterraform validate\nterraform test",
+        "cd environments/infra\nterraform output public_subnet_ids\nterraform output private_subnet_ids\nterraform output cluster_subnet_ids\nterraform output node_subnet_ids\nterraform output fck_nat_subnet_id\nterraform output fck_nat_primary_network_interface_id\nterraform output private_default_route_network_interface_id",
+        "export AWS_REGION=ap-northeast-2\nexport CLUSTER_NAME=$(terraform output -raw cluster_name)\nexport NODE_GROUP_NAME=$(terraform output -raw node_group_name)\naws eks describe-nodegroup \\\n--region \"${AWS_REGION}\" \\\n--cluster-name \"${CLUSTER_NAME}\" \\\n--nodegroup-name \"${NODE_GROUP_NAME}\" \\\n--query 'nodegroup.subnets' \\\n--output table",
+        "aws ec2 describe-instances \\\n--region \"${AWS_REGION}\" \\\n--filters \\\n\"Name=tag:eks:cluster-name,Values=${CLUSTER_NAME}\" \\\n\"Name=instance-state-name,Values=running\" \\\n--query 'Reservations[].Instances[].{InstanceId:InstanceId,SubnetId:SubnetId,PrivateIp:PrivateIpAddress,PublicIp:PublicIpAddress}' \\\n--output table",
+        "kubectl get nodes -o wide",
+        "aws ec2 describe-subnets \\\n--region \"${AWS_REGION}\" \\\n--subnet-ids $(terraform output -json public_subnet_ids | jq -r '.[]') \\\n--query 'Subnets[].{SubnetId:SubnetId,Tags:Tags}' \\\n--output json"
+      ],
+      "source_reference": "src/content/docs/foundational/private-subnets.md"
+    },
+    {
+      "item_id": "foundational/ebs-기반-workload-storage-data-보호",
+      "phase": "Foundational",
+      "domain": "데이터 보호",
+      "title": "EBS 기반 Workload Storage data를 보호한다",
+      "difficulty": "★☆☆",
+      "href": "/foundational/ebs-기반-workload-storage-data-보호",
+      "checks": [
+        "AWS 계정/리전의 EBS 기본 암호화(`EBS encrypted by default`)가 활성화되어 있는가?",
+        "EBS CSI Driver 기반 StorageClass에 `parameters.encrypted: \"true\"`가 명시되어 있는가?",
+        "customer managed KMS key 사용 시 `kmsKeyId`와 EBS CSI Driver IAM/KMS 권한이 올바르게 구성되어 있는가?",
+        "민감 데이터를 저장하는 PVC가 `storageClassName`을 명시적으로 지정하는가?",
+        "StatefulSet의 `volumeClaimTemplates`가 암호화된 StorageClass를 사용하고 있는가?",
+        "PVC가 클러스터 기본 StorageClass에 암묵적으로 의존하지 않는가?",
+        "이미 생성된 PV가 연결한 실제 EBS volume의 `Encrypted` 값이 `true`인지 확인했는가?",
+        "비암호화 PV/EBS volume이 발견되면 재생성 또는 마이그레이션 계획이 있는가?",
+        "Kustomize/Helm 렌더링 결과에 암호화 StorageClass와 PVC 참조가 함께 포함되는가?",
+        "PR 또는 CI 단계에서 StorageClass/PVC 암호화 설정을 점검하는 스크립트가 실행되는가?",
+        "스냅샷, 백업, 복구 볼륨도 동일한 암호화 key 정책을 따르는가?"
+      ],
+      "verify_commands": [
+        "kubectl get storageclass encrypted-gp3 -o yaml",
+        "kubectl get pvc -n <namespace> \\\n-o custom-columns='NAME:.metadata.name,STATUS:.status.phase,SC:.spec.storageClassName,VOLUME:.spec.volumeName'",
+        "kubectl get statefulset db -n <namespace> -o yaml \\\n| rg -n 'volumeClaimTemplates|storageClassName|encrypted-gp3'"
+      ],
+      "source_reference": "src/content/docs/foundational/ebs-기반-workload-storage-data-보호.md"
+    },
+    {
+      "item_id": "foundational/workload-내-hardcoded-secret-제거",
+      "phase": "Foundational",
+      "domain": "데이터 보호",
+      "title": "Workload 내 Hardcoded Secret을 탐지하고 Secrets Manager 참조로 제거한다",
+      "difficulty": "★★☆",
+      "href": "/foundational/workload-내-hardcoded-secret-제거",
+      "checks": [
+        "스크립트 파일을 저장소 전체 또는 지정된 IaC/manifest 경로에 실행했는가?",
+        "CI에서 `--fail-on high` 기준으로 하드코딩 Secret 재유입을 차단하는가?",
+        "`--show-secrets`를 CI나 공유 로그에서 사용하지 않는가?",
+        "high/critical 탐지 결과에 대해 실제 Secret 여부를 triage했는가?",
+        "실제 노출된 값은 새 값으로 로테이션하고 기존 값을 폐기했는가?",
+        "Redis, PostgreSQL, 외부 API token 같은 Secret 원본이 AWS Secrets Manager 또는 승인된 외부 Secret 저장소로 이동되었는가?",
+        "Terraform state에 실제 Secret value가 저장되지 않도록 주입 경로를 분리했는가?",
+        "ESO 또는 CSI Driver가 필요한 Secret ARN만 읽도록 IAM 권한이 제한되어 있는가?",
+        "모든 대상 namespace에 `ExternalSecret` 또는 동등한 Secret 주입 구성이 적용되어 있는가?",
+        "워크로드 매니페스트의 민감 환경변수가 `value:` 대신 `secretKeyRef`, CSI mount, SDK 조회 중 하나를 사용하는가?",
+        "Kustomize/Helm 렌더링 결과에 실제 Secret 값이 출력되지 않는가?",
+        "Secret 스캔 allowlist가 리뷰되고, 실제 Secret을 예외 처리하지 않도록 관리되는가?",
+        "Secrets Manager 조회 이력이 CloudTrail에서 감사 가능한가?",
+        "애플리케이션 로그에 Secret 값이나 connection string이 출력되지 않는가?"
+      ],
+      "verify_commands": [
+        "kubectl kustomize manifests/overlays/<namespace> \\\n| rg -n 'password|token|api-key|secret|stringData|value:|valueFrom|secretKeyRef'",
+        "aws secretsmanager describe-secret \\\n--region <region> \\\n--secret-id /<namespace>/app/redis",
+        "kubectl get externalsecret -n <namespace>\nkubectl describe externalsecret app-runtime-secrets -n <namespace>\nkubectl get secret app-runtime-secrets -n <namespace>",
+        "kubectl get deploy api -n <namespace> -o yaml \\\n| rg -n 'REDIS_URL|EXTERNAL_POSTGRES_PASSWORD|value:|valueFrom|secretKeyRef'\nkubectl get statefulset db -n <namespace> -o yaml \\\n| rg -n 'REDIS_PASSWORD|value:|valueFrom|secretKeyRef'",
+        "kubectl rollout status deploy/api -n <namespace>\nkubectl rollout status statefulset/db -n <namespace>\nkubectl logs deploy/api -n <namespace> --tail=100",
+        "aws cloudtrail lookup-events \\\n--region <region> \\\n--lookup-attributes AttributeKey=EventName,AttributeValue=GetSecretValue \\\n--max-results 20"
+      ],
+      "source_reference": "src/content/docs/foundational/workload-내-hardcoded-secret-제거.md"
+    },
+    {
+      "item_id": "foundational/cluster내-리소스-접근제어",
+      "phase": "Foundational",
+      "domain": "접근 제어",
+      "title": "네임스페이스 내 리소스 접근 제어를 위한 RBAC 정의 및 검증을 수행한다",
+      "difficulty": "미정",
+      "href": "/foundational/cluster내-리소스-접근제어",
+      "checks": [
+        "네임스페이스별로 필요한 권한 범위가 정의되어 있는가?",
+        "ServiceAccount 또는 사용자에 RoleBinding이 명시적으로 연결되어 있는가?",
+        "적용한 권한에 맞게 다른 네임스페이스에 대한 접근이 차단되는가?",
+        "ClusterRoleBinding이 필요한 경우에만 사용되고 있는가?",
+        "Role 또는 ClusterRole에 불필요한 `*` wildcard 권한이 없는가?"
+      ],
+      "verify_commands": [
+        "kubectl kustomize eks-secure-infra/manifests/overlays/[namespace명]",
+        "kubectl apply -k eks-secure-infra/manifests/overlays/[namespace명]",
+        "kubectl get role [Role명] -n [namespace명]\nkubectl get rolebinding [RoleBinding명] -n [namespace명]",
+        "kubectl describe role [Role명] -n [namespace명]",
+        "kubectl auth can-i get pods \\\n--as=system:serviceaccount:[namespace명]:[serviceAccount명] \\\n-n [namespace명]\nkubectl auth can-i list pods \\\n--as=system:serviceaccount:[namespace명]:[serviceAccount명] \\\n-n [namespace명]\nkubectl auth can-i watch pods \\\n--as=system:serviceaccount:[namespace명]:[serviceAccount명] \\\n-n [namespace명]",
+        "kubectl auth can-i create pods \\\n--as=system:serviceaccount:[namespace명]:[serviceAccount명] \\\n-n [namespace명]\nkubectl auth can-i delete pods \\\n--as=system:serviceaccount:[namespace명]:[serviceAccount명] \\\n-n [namespace명]\nkubectl auth can-i get secrets \\\n--as=system:serviceaccount:[namespace명]:[serviceAccount명] \\\n-n [namespace명]",
+        "kubectl auth can-i list pods \\\n--as=system:serviceaccount:[namespace명]:[serviceAccount명] \\\n-n default",
+        "kubectl auth can-i list pods \\\n--as=system:serviceaccount:[namespace명]:[serviceAccount명] \\\n--all-namespaces"
+      ],
+      "source_reference": "src/content/docs/foundational/cluster내-리소스-접근제어.md"
+    },
+    {
+      "item_id": "foundational/iam-k8s-mapping",
+      "phase": "Foundational",
+      "domain": "접근 제어",
+      "title": "EKS 클러스터에 접속할 IAM 신분을 EKS Access Entries 방식으로 관리한다",
+      "difficulty": "미정",
+      "href": "/foundational/iam-k8s-mapping",
+      "checks": [
+        "클러스터 인증 모드가 `API_AND_CONFIG_MAP`로 설정되어 있는가?",
+        "권한을 부여할 IAM 사용자 또는 IAM 역할 ARN을 정확히 확인했는가?",
+        "IAM Principal별 Access Entry가 생성되어 있는가?",
+        "각 Access Entry에 적절한 AWS 관리형 Access Policy가 연결되어 있는가?",
+        "네임스페이스 범위 권한이 필요한 경우 `accessScope`가 `namespace`로 제한되어 있는가?",
+        "클러스터 전체 권한이 필요한 경우 사유와 대상 IAM 역할이 명확한가?",
+        "권한을 부여받은 IAM 주체로 실제 `kubectl` 접근 테스트를 수행했는가?"
+      ],
+      "verify_commands": [
+        "aws eks describe-cluster \\\n--name [cluster명] \\\n--region [region명] \\\n--query \"cluster.accessConfig\"",
+        "`authenticationMode`가 `CONFIG_MAP`이면 기존 `aws-auth` ConfigMap 방식만 사용 중인 상태이다. Access Entries를 함께 사용하려면 인증 모드를 `API_AND_CONFIG_MAP`로 변경한다.\n기존 `aws-auth` ConfigMap 매핑을 즉시 제거하지 않고 Access Entries를 병행하려면 `API_AND_CONFIG_MAP` 모드를 사용한다.\n현재 `eks-secure-infra` 저장소에서는 `eks-secure-infra/environments/infra/main.tf`의 EKS 모듈 호출부에서 인증 모드를 선언한다.",
+        "출력 결과에서 `policyArn`과 `accessScope`가 의도한 값인지 확인한다.\n`API_AND_CONFIG_MAP` 모드는 기존 `aws-auth` ConfigMap과 EKS Access Entries를 함께 사용하는 전환 단계에 적합하다.\n전환 시 권장 순서는 다음과 같다.\n1. 현재 `aws-auth` ConfigMap에 등록된 IAM 사용자와 역할을 목록화한다.\n2. 각 IAM 주체가 실제로 필요한 권한 수준을 확인한다.\n3. 동일하거나 더 제한적인 Access Entry와 Access Policy를 생성한다.\n4. Access Entry 기반 접근이 정상 동작하는지 검증한다.\n5. 중복되거나 불필요한 `aws-auth` 매핑을 단계적으로 제거한다.\n운영 중인 클러스터에서 `aws-auth` ConfigMap을 먼저 삭제하거나 대량 수정하면 접근 장애가 발생할 수 있다. 따라서 Access Entries를 검증한 뒤 점진적으로 전환해야 한다.\n권한을 부여받은 IAM 주체로 kubeconfig를 업데이트한 뒤 Kubernetes API 접근을 확인한다."
+      ],
+      "source_reference": "src/content/docs/foundational/iam-k8s-mapping.md"
+    },
+    {
+      "item_id": "quick-wins/container-image-scanning",
+      "phase": "Quick Wins",
+      "domain": "Pod 보안",
+      "title": "Container Image Scan 및 차단을 한다",
+      "difficulty": "★★☆",
+      "href": "/quick-wins/container-image-scanning",
+      "checks": [
+        "ECR registry scanning configuration이 `ENHANCED` + `CONTINUOUS_SCAN`으로 설정되어 있는가?",
+        "Amazon Inspector v2 ECR 스캔이 `ENABLED` 상태인가?",
+        "ECR 리포지토리 태그가 `IMMUTABLE`로 설정되어 있는가?",
+        "ECR 이미지 암호화가 `KMS`로 설정되어 있는가?",
+        "Inspector findings에서 Critical/High 취약점을 정기적으로 확인하는가?"
+      ],
+      "verify_commands": [
+        "AWS_PROFILE=<PROFILE> aws ecr get-registry-scanning-configuration \\\n--region ap-northeast-2",
+        "AWS_PROFILE=<PROFILE> aws ecr describe-repositories \\\n--region ap-northeast-2 \\\n--query 'repositories[*].{Name:repositoryName,TagMutability:imageTagMutability,Encryption:encryptionConfiguration.encryptionType}'",
+        "AWS_PROFILE=<PROFILE> aws inspector2 list-findings \\\n--filter-criteria '{\n\"resourceType\": [{\"comparison\":\"EQUALS\",\"value\":\"AWS_ECR_CONTAINER_IMAGE\"}],\n\"severity\": [{\"comparison\":\"EQUALS\",\"value\":\"CRITICAL\"},{\"comparison\":\"EQUALS\",\"value\":\"HIGH\"}]\n}' \\\n--region ap-northeast-2",
+        "AWS_PROFILE=<PROFILE> aws inspector2 get-member \\\n--account-id $(aws sts get-caller-identity --query Account --output text) \\\n--region ap-northeast-2"
+      ],
+      "source_reference": "src/content/docs/quick-wins/container-image-scanning.md"
+    },
+    {
+      "item_id": "quick-wins/prometheus-모니터링-활성화-및-메트릭-수집",
+      "phase": "Quick Wins",
+      "domain": "Pod 보안",
+      "title": "Prometheus로 클러스터 메트릭 수집 기반을 구성한다",
+      "difficulty": "★★☆",
+      "href": "/quick-wins/prometheus-모니터링-활성화-및-메트릭-수집",
+      "checks": [
+        "`monitoring` 네임스페이스의 모든 Pod가 `Running` 상태인가?",
+        "Prometheus PVC가 `Bound` 상태이고 암호화된 GP3 스토리지를 사용하는가?",
+        "Prometheus UI에서 `apiserver_request_total`, `kube_pod_container_status_restarts_total` 등 보안 메트릭 쿼리가 데이터를 반환하는가?",
+        "kube-state-metrics, node-exporter Scrape 타겟이 `up` 상태인가?",
+        "Grafana와 AlertManager가 이 단계에서는 비활성화되어 있는가?"
+      ],
+      "verify_commands": [
+        "kubectl get pods -n monitoring",
+        "kubectl get pvc -n monitoring\nkubectl describe pvc -n monitoring | grep -E \"StorageClass|Volume\"",
+        "kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090"
+      ],
+      "source_reference": "src/content/docs/quick-wins/prometheus-모니터링-활성화-및-메트릭-수집.md"
+    },
+    {
+      "item_id": "quick-wins/resource-quota-limitrange",
+      "phase": "Quick Wins",
+      "domain": "Pod 보안",
+      "title": "Cluster Resource 사용을 제한한다",
+      "difficulty": "★☆☆",
+      "href": "/quick-wins/resource-quota-limitrange",
+      "checks": [
+        "모든 팀 또는 서비스 네임스페이스에 `ResourceQuota`가 적용되어 있는가?",
+        "모든 팀 또는 서비스 네임스페이스에 기본 `LimitRange`가 적용되어 있는가?",
+        "주요 워크로드 컨테이너에 CPU/Memory request와 limit이 명시되어 있는가?",
+        "quota 초과 Pod 생성이 `Forbidden` 오류로 차단되는 것을 테스트했는가?",
+        "개발/스테이징/프로덕션 네임스페이스의 quota 강도가 환경 특성에 맞게 다르게 설정되어 있는가?",
+        "CPU throttling, OOMKilled, Pending Pod, quota 초과 이벤트를 관측하고 값 조정 기준을 정했는가?",
+        "quota 값이 실제 사용량과 서비스 중요도에 맞게 주기적으로 조정되는가?"
+      ],
+      "verify_commands": [
+        "kubectl get resourcequota,limitrange -n team-a\nkubectl describe resourcequota namespace-resource-quota -n team-a\nkubectl describe limitrange default-container-limits -n team-a",
+        "kubectl run limitrange-test \\\n-n team-a \\\n--image=busybox:1.36 \\\n--restart=Never \\\n-- sleep 3600\nkubectl get pod limitrange-test -n team-a -o yaml \\\n| grep -A5 'resources:'"
+      ],
+      "source_reference": "src/content/docs/quick-wins/resource-quota-limitrange.md"
+    },
+    {
+      "item_id": "quick-wins/ingress-load-balancer-tls",
+      "phase": "Quick Wins",
+      "domain": "네트워크 보안",
+      "title": "Ingress와 Load Balancer에서 TLS를 강제한다",
+      "difficulty": "미정",
+      "href": "/quick-wins/ingress-load-balancer-tls",
+      "checks": [
+        "외부 공개 Ingress 또는 Service type `LoadBalancer`가 HTTPS 리스너를 제공하는가?",
+        "`http://` 요청이 `https://`로 강제 리다이렉트되는가?",
+        "ALB 사용 시 `certificate-arn`, `listen-ports`, `ssl-redirect`, `ssl-policy`가 명시되어 있는가?",
+        "TLS 정책이 TLS 1.2 이상을 강제하며 TLS 1.0/1.1을 허용하지 않는가?",
+        "인증서 SAN이 실제 서비스 도메인과 일치하고 인증서 체인이 정상인가?",
+        "인증서 만료 알람이 구성되어 있는가?",
+        "백엔드 재암호화가 필요한 서비스는 `backend-protocol: HTTPS` 또는 Ingress Controller TLS 구성이 적용되어 있는가?"
+      ],
+      "verify_commands": [
+        "kubectl get ingress web -n team-d -o yaml",
+        "aws elbv2 describe-listeners \\\n--region \"${AWS_REGION}\" \\\n--load-balancer-arn \"${LOAD_BALANCER_ARN}\" \\\n--query 'Listeners[].{Port:Port,Protocol:Protocol,SslPolicy:SslPolicy,DefaultActions:DefaultActions[].Type,Certificates:Certificates[].CertificateArn}' \\\n--output json",
+        "curl -I https://<domain>"
+      ],
+      "source_reference": "src/content/docs/quick-wins/ingress-load-balancer-tls.md"
+    },
+    {
+      "item_id": "quick-wins/aws-secret-manager-사용",
+      "phase": "Quick Wins",
+      "domain": "데이터 보호",
+      "title": "Pod 연계 external Secret storage를 사용한다",
+      "difficulty": "★★☆",
+      "href": "/quick-wins/aws-secret-manager-사용",
+      "checks": [
+        "애플리케이션 코드와 테스트 코드에 실제 비밀번호, token, API Key가 남아 있지 않는가?",
+        "Kubernetes 매니페스트, Helm values, Kustomize patch에 평문 시크릿 값이 없는가?",
+        "Docker build context와 컨테이너 이미지 레이어에 `.env`, 인증서, private key, token 파일이 포함되지 않는가?",
+        "민감 값의 원본이 Secrets Manager 또는 Parameter Store 같은 외부 저장소로 이동되었는가?",
+        "워크로드에는 실제 값 대신 Secret 이름, key, ARN, parameter path 같은 참조만 남아 있는가?",
+        "Pod 주입 방식이 ESO, Secrets Store CSI Driver, SDK 조회 중 하나로 명확히 정의되어 있는가?",
+        "외부 시크릿 접근 권한이 IRSA 또는 Pod Identity로 최소 권한만 부여되어 있는가?",
+        "Kubernetes Secret을 사용하는 경우 etcd 암호화와 RBAC 접근 통제가 적용되어 있는가?",
+        "이미 노출된 시크릿을 새 값으로 로테이션했는가?",
+        "Git 히스토리, CI/CD 로그, 이미지 레지스트리에서 기존 시크릿 노출 범위를 확인했는가?",
+        "배포 후 애플리케이션이 외부 참조 기반으로 정상 동작하고 로그에 시크릿을 출력하지 않는가?"
+      ],
+      "verify_commands": [
+        "kubectl kustomize eks-vulnerable-infra/manifests/overlays/<namespace> \\\n| rg -n 'password|token|api-key|secret|value:'\nhelm template <release> <chart> -f values.yaml \\\n| rg -n 'password|token|api-key|secret|stringData|value:'",
+        "kubectl get externalsecret -n <namespace>\nkubectl describe externalsecret app-runtime-secrets -n <namespace>\nkubectl get secret app-runtime-secrets -n <namespace>",
+        "kubectl get deploy api -n <namespace> -o yaml \\\n| rg -n 'REDIS_URL|EXTERNAL_POSTGRES_PASSWORD|value:|valueFrom|secretKeyRef'\nkubectl get statefulset db -n <namespace> -o yaml \\\n| rg -n 'REDIS_PASSWORD|value:|valueFrom|secretKeyRef'",
+        "kubectl rollout status deploy/api -n <namespace>\nkubectl rollout status statefulset/db -n <namespace>\nkubectl logs deploy/api -n <namespace> --tail=100"
+      ],
+      "source_reference": "src/content/docs/quick-wins/aws-secret-manager-사용.md"
+    },
+    {
+      "item_id": "quick-wins/default-service-account",
+      "phase": "Quick Wins",
+      "domain": "접근 제어",
+      "title": "Default ServiceAccount 사용을 제한하고 불필요한 토큰 마운트를 비활성화한다",
+      "difficulty": "★☆☆",
+      "href": "/quick-wins/default-service-account",
+      "checks": [
+        "`default` ServiceAccount에 `automountServiceAccountToken: false`가 설정되어 있는가?",
+        "일반 애플리케이션 워크로드가 `default` ServiceAccount를 직접 사용하지 않는가?",
+        "Kubernetes API 접근이 필요한 워크로드만 전용 ServiceAccount를 사용하고 있는가?",
+        "API 접근이 필요 없는 워크로드에는 `automountServiceAccountToken: false`가 적용되어 있는가?",
+        "`eks-secure-infra`의 `api` 워크로드가 `default` SA 대신 전용 SA를 사용하도록 수정되었는가?"
+      ],
+      "verify_commands": [
+        "kubectl get sa default -n team-a -o jsonpath='{.automountServiceAccountToken}{\"\\n\"}'\nkubectl get deploy api -n team-a -o jsonpath='{.spec.template.spec.serviceAccountName}{\"\\n\"}'\nkubectl get deploy api -n team-a -o jsonpath='{.spec.template.spec.automountServiceAccountToken}{\"\\n\"}'\nkubectl exec -n team-a deploy/api -- ls /var/run/secrets/kubernetes.io/serviceaccount"
+      ],
+      "source_reference": "src/content/docs/quick-wins/default-service-account.md"
+    },
+    {
+      "item_id": "quick-wins/non-root-containers",
+      "phase": "Quick Wins",
+      "domain": "접근 제어",
+      "title": "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다",
+      "difficulty": "★☆☆",
+      "href": "/quick-wins/non-root-containers",
+      "checks": [
+        "Deployment 또는 Pod에 `runAsNonRoot: true`가 설정되어 있는가?",
+        "`runAsUser`와 `runAsGroup`이 0이 아닌 UID/GID로 명시되어 있는가?",
+        "컨테이너에 `readOnlyRootFilesystem: true`가 설정되어 있는가?",
+        "컨테이너에 `allowPrivilegeEscalation: false`이 적용되어 있는가?",
+        "애플리케이션이 쓰는 경로가 루트 파일시스템이 아니라 명시적인 볼륨으로 분리되어 있는가?",
+        "`kubectl exec -- id` 결과가 `uid=0(root)`가 아님을 확인했는가?",
+        "루트 파일시스템 쓰기 시도 시 `Read-only file system` 오류가 발생하는가?"
+      ],
+      "verify_commands": [
+        "kubectl get deploy web -n <namespace명> \\\n-o jsonpath='{.spec.template.spec.securityContext}{\"\\n\"}'\nkubectl get deploy web -n <namespace명> \\\n-o jsonpath='{.spec.template.spec.containers[0].securityContext}{\"\\n\"}'"
+      ],
+      "source_reference": "src/content/docs/quick-wins/non-root-containers.md"
+    }
+  ]
+}
