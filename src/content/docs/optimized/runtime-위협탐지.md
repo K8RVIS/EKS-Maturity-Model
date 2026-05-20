@@ -5,9 +5,9 @@ phase: "Optimized"
 domain: "Pod 보안"
 difficulty: "★★★"
 owner: "장해윤"
-order: 80
+order: 70
 sidebar:
-  order: 80
+  order: 70
 ---
 
 ## 왜 필요한가

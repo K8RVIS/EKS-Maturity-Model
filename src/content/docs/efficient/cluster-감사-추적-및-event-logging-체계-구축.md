@@ -1,5 +1,5 @@
 ---
-title: "Cluster 감사 추적 및 Event Logging 체계 구축"
+title: "Cluster 감사 추적 및 Event Logging 체계를 구축한다"
 description: "Prometheus/Grafana 모니터링은 \"지금 클러스터가 어떤 상태인가\"를 보여준다. 하지만 보안 사고가 발생했을 때 \"누가 언제 무엇을 했는가\"를 사후에 증명하는 것은 전혀 다른 문제다. 이를 가능하게 하는 것이 감사 로그(Audit Log)와 이벤트 추적 체계"
 phase: "Efficient"
 domain: "Pod 보안"

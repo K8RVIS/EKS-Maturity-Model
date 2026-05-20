@@ -5,9 +5,9 @@ phase: "Quick Wins"
 domain: "Pod 보안"
 difficulty: "★★☆"
 owner: "공통 (전체 실습)"
-order: 70
+order: 60
 sidebar:
-  order: 70
+  order: 60
 ---
 
 ## 왜 필요한가

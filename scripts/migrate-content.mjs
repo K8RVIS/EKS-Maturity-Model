@@ -214,7 +214,7 @@ function writePhaseIndex(docsDir, phase) {
       "",
       "각 항목은 적용 전 상태를 확인하고, 매니페스트 또는 클러스터 설정을 변경한 뒤, 명령으로 기대 결과를 검증하는 흐름으로 읽으면 됩니다.",
       "",
-      `<MaturityMatrix initialPhase="${phase.phase}" />`,
+      `<MaturityMatrix initialPhase="${phase.phase}" layout="phase-domain" />`,
       "",
     ].join("\n"),
   );

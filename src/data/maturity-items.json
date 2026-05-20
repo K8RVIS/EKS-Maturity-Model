@@ -29,7 +29,7 @@
     "domain": "데이터 보호",
     "difficulty": "★★☆",
     "href": "/quick-wins/aws-secret-manager-사용",
-    "order": 50
+    "order": 40
   },
   {
     "title": "Cluster Resource 사용을 제한한다",
@@ -37,7 +37,7 @@
     "domain": "Pod 보안",
     "difficulty": "★☆☆",
     "href": "/quick-wins/resource-quota-limitrange",
-    "order": 60
+    "order": 50
   },
   {
     "title": "Container Image Scan 및 차단을 한다",
@@ -45,7 +45,7 @@
     "domain": "Pod 보안",
     "difficulty": "★★☆",
     "href": "/quick-wins/container-image-scanning",
-    "order": 70
+    "order": 60
   },
   {
     "title": "Prometheus로 클러스터 메트릭 수집 기반을 구성한다",
@@ -53,7 +53,7 @@
     "domain": "Pod 보안",
     "difficulty": "★★☆",
     "href": "/quick-wins/prometheus-모니터링-활성화-및-메트릭-수집",
-    "order": 80
+    "order": 70
   },
   {
     "title": "네임스페이스 내 리소스 접근 제어를 위한 RBAC 정의 및 검증을 수행한다",
@@ -112,7 +112,7 @@
     "order": 70
   },
   {
-    "title": "Container Image 취약점 관리",
+    "title": "Container Image 취약점을 관리한다",
     "phase": "Foundational",
     "domain": "Pod 보안",
     "difficulty": "★★☆",
@@ -176,7 +176,7 @@
     "order": 50
   },
   {
-    "title": "Cluster 감사 추적 및 Event Logging 체계 구축",
+    "title": "Cluster 감사 추적 및 Event Logging 체계를 구축한다",
     "phase": "Efficient",
     "domain": "Pod 보안",
     "difficulty": "★★★",
@@ -232,20 +232,12 @@
     "order": 50
   },
   {
-    "title": "Container Image 정책을 관리한다",
-    "phase": "Optimized",
-    "domain": "Pod 보안",
-    "difficulty": "★★★",
-    "href": "/optimized/container-image-정책-관리",
-    "order": 60
-  },
-  {
     "title": "Container System Call 제어",
     "phase": "Optimized",
     "domain": "Pod 보안",
     "difficulty": "★★★",
     "href": "/optimized/container-system-call-제어",
-    "order": 70
+    "order": 60
   },
   {
     "title": "Runtime 위협탐지",
@@ -253,6 +245,6 @@
     "domain": "Pod 보안",
     "difficulty": "★★★",
     "href": "/optimized/runtime-위협탐지",
-    "order": 80
+    "order": 70
   }
 ]
