@@ -9,21 +9,21 @@
       "item_id": "foundational/container-image-취약점-관리",
       "phase": "Foundational",
       "domain": "Pod 보안",
-      "title": "Container Image 취약점 관리",
+      "title": "Container Image 취약점을 관리한다",
       "difficulty": "★★☆",
       "href": "/foundational/container-image-취약점-관리",
       "checks": [
-        "EventBridge Rule이 CRITICAL/HIGH Inspector findings를 정상 감지하는가?",
-        "SNS Topic이 생성되어 있고 이메일 구독이 확인 완료 상태인가?",
-        "Inspector finding 발생 시 담당자에게 이메일 알림이 수신되는가?",
+        "서비스(레포)별 SUPPRESS 필터가 생성되어 있는가?",
+        "ACTIVE findings에서 서비스 런타임과 무관한 패키지 취약점이 제거되어 있는가?",
+        "억제된 findings가 SUPPRESSED 상태로 보관되어 있는가?",
         "취약점 심각도별 판단 기준과 조치 기한이 문서화되어 있는가?",
-        "CRITICAL findings에 대한 24시간 내 조치 프로세스가 수립되어 있는가?"
+        "서비스 런타임 변경 시 억제 규칙 갱신 프로세스가 수립되어 있는가?"
       ],
       "verify_commands": [
-        "AWS_PROFILE=<PROFILE> aws events describe-rule \\\n--name <project_name>-inspector-findings \\\n--region ap-northeast-2 \\\n--query '{State:State,EventPattern:EventPattern}'",
-        "AWS_PROFILE=<PROFILE> aws sns list-topics \\\n--region ap-northeast-2 \\\n--query \"Topics[?contains(TopicArn, 'inspector-alerts')]\"",
-        "AWS_PROFILE=<PROFILE> aws sns list-subscriptions-by-topic \\\n--topic-arn <SNS_TOPIC_ARN> \\\n--region ap-northeast-2 \\\n--query 'Subscriptions[*].{Protocol:Protocol,Endpoint:Endpoint,Status:SubscriptionArn}'",
-        "AWS_PROFILE=<PROFILE> aws events put-events \\\n--region ap-northeast-2 \\\n--entries '[{\n\"Source\": \"aws.inspector2\",\n\"DetailType\": \"Inspector2 Finding\",\n\"Detail\": \"{\\\"severity\\\":\\\"CRITICAL\\\",\\\"title\\\":\\\"[테스트] Critical 취약점 발견\\\",\\\"description\\\":\\\"EventBridge-SNS 연결 테스트\\\",\\\"status\\\":\\\"ACTIVE\\\",\\\"resources\\\":[{\\\"type\\\":\\\"AWS_ECR_CONTAINER_IMAGE\\\",\\\"details\\\":{\\\"awsEcrContainerImage\\\":{\\\"imageHash\\\":\\\"sha256:test\\\"}}}]}\",\n\"EventBusName\": \"default\"\n}]'"
+        "AWS_PROFILE=<PROFILE> aws inspector2 list-filters \\\n--action SUPPRESS \\\n--region ap-northeast-2 \\\n--query 'filters[?starts_with(name, `eks-secure-infra-triage`)].{name:name,arn:arn}' \\\n--output table",
+        "eks-secure-infra-triage-web   arn:aws:inspector2:ap-northeast-2:...\neks-secure-infra-triage-api   arn:aws:inspector2:ap-northeast-2:...\neks-secure-infra-triage-db    arn:aws:inspector2:ap-northeast-2:...",
+        "AWS_PROFILE=<PROFILE> aws inspector2 list-findings \\\n--filter-criteria '{\n\"ecrImageRepositoryName\": [{\"comparison\":\"PREFIX\",\"value\":\"eks-secure-infra/\"}],\n\"findingStatus\": [{\"comparison\":\"EQUALS\",\"value\":\"ACTIVE\"}]\n}' \\\n--region ap-northeast-2 \\\n--query 'findings[].{severity:severity,pkg:packageVulnerabilityDetails.vulnerablePackages[0].name}' \\\n--output table",
+        "AWS_PROFILE=<PROFILE> aws inspector2 list-findings \\\n--filter-criteria '{\n\"ecrImageRepositoryName\": [{\"comparison\":\"PREFIX\",\"value\":\"eks-secure-infra/\"}],\n\"findingStatus\": [{\"comparison\":\"EQUALS\",\"value\":\"SUPPRESSED\"}]\n}' \\\n--region ap-northeast-2 \\\n--query 'findings[].{severity:severity,pkg:packageVulnerabilityDetails.vulnerablePackages[0].name}' \\\n--output table"
       ],
       "source_reference": "src/content/docs/foundational/container-image-취약점-관리.md"
     },
