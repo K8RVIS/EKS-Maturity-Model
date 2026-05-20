@@ -9,7 +9,7 @@ description: Assess Amazon EKS repositories and Kubernetes manifests against the
 
 Operate read-only by default. Do not run `kubectl apply`, `terraform apply`, `helm upgrade`, `aws eks update-*`, or any command that mutates a cluster, AWS account, or repository unless the user explicitly asks for implementation after reviewing findings.
 
-For v1, automated scanning is repo-only and covers five Quick Wins controls. Treat live cluster checks and full Foundational automation as v1.1 guidance unless the user provides command output to analyze.
+For v1, automated scanning is repo-only and covers five Quick Wins controls. Treat live cluster checks and full Foundational automation as v1.1 guidance unless the user provides command output to analyze. 
 
 ## Workflow
 
