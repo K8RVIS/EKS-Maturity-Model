@@ -18,6 +18,10 @@ function statusByItem(findings) {
   return new Map(findings.map((finding) => [finding.item_id, finding.status]));
 }
 
+function findingByItem(findings, itemId) {
+  return findings.find((finding) => finding.item_id === itemId);
+}
+
 test("generated skill catalog covers Quick Wins and Foundational docs from source content", async () => {
   const { buildCatalog } = await import("../skills/eks-maturity-advisor/scripts/generate_catalog.mjs");
 
@@ -155,6 +159,180 @@ test("repo scanner reports Quick Wins passes for hardened manifests", async () =
   assert.equal(statuses.get("quick-wins/ingress-load-balancer-tls"), "pass");
   assert.equal(statuses.get("quick-wins/resource-quota-limitrange"), "pass");
   assert.equal(statuses.get("quick-wins/aws-secret-manager-사용"), "pass");
+});
+
+test("repo scanner includes domain and priority metadata for sorted findings", async () => {
+  const { scanRepository } = await import("../skills/eks-maturity-advisor/scripts/scan_eks_maturity.mjs");
+  const repoRoot = mkdtempSync(path.join(tmpdir(), "eks-maturity-priority-"));
+
+  writeFixture(
+    path.join(repoRoot, "app.yaml"),
+    `
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: api
+      namespace: team-a
+    spec:
+      template:
+        spec:
+          serviceAccountName: default
+          automountServiceAccountToken: true
+          containers:
+            - name: api
+              image: example/api:latest
+              securityContext:
+                runAsUser: 0
+    `,
+  );
+
+  const report = scanRepository({ repoRoot });
+  const nonRoot = findingByItem(report.findings, "quick-wins/non-root-containers");
+  const quota = findingByItem(report.findings, "quick-wins/resource-quota-limitrange");
+
+  assert.equal(nonRoot.domain, "접근 제어");
+  assert.equal(nonRoot.priority, "P1");
+  assert.equal(quota.priority, "P2");
+  assert.deepEqual(
+    report.findings.map((finding) => finding.priority),
+    ["P1", "P1", "P2", "P3", "P3"],
+  );
+});
+
+test("live scanner reports approved v1.1 Foundational controls from read-only command output", async () => {
+  const { scanLiveCluster } = await import("../skills/eks-maturity-advisor/scripts/scan_eks_maturity.mjs");
+  const calls = [];
+  const commandRunner = ({ command, args }) => {
+    calls.push([command, ...args].join(" "));
+    const commandLine = [command, ...args].join(" ");
+
+    if (commandLine.includes("aws eks describe-cluster")) {
+      return JSON.stringify({
+        cluster: {
+          resourcesVpcConfig: {
+            endpointPublicAccess: false,
+            endpointPrivateAccess: true,
+          },
+          accessConfig: {
+            authenticationMode: "API_AND_CONFIG_MAP",
+          },
+        },
+      });
+    }
+
+    if (commandLine.includes("aws eks list-nodegroups")) {
+      return JSON.stringify({ nodegroups: ["system"] });
+    }
+
+    if (commandLine.includes("aws eks describe-nodegroup")) {
+      return JSON.stringify({ nodegroup: { subnets: ["subnet-private-a", "subnet-private-b"] } });
+    }
+
+    if (commandLine.includes("aws ec2 describe-subnets")) {
+      return JSON.stringify({
+        Subnets: [
+          { SubnetId: "subnet-private-a", MapPublicIpOnLaunch: false },
+          { SubnetId: "subnet-private-b", MapPublicIpOnLaunch: false },
+        ],
+      });
+    }
+
+    if (commandLine.includes("aws eks list-access-entries")) {
+      return JSON.stringify({ accessEntries: ["arn:aws:iam::123456789012:role/platform-admin"] });
+    }
+
+    if (commandLine.includes("kubectl get pods")) {
+      return JSON.stringify({
+        items: [
+          {
+            metadata: { namespace: "team-a", name: "api" },
+            spec: {
+              containers: [{ name: "api", securityContext: { privileged: false } }],
+            },
+          },
+        ],
+      });
+    }
+
+    if (commandLine.includes("kubectl get networkpolicy")) {
+      return JSON.stringify({
+        items: [
+          {
+            metadata: { namespace: "team-a", name: "default-deny" },
+            spec: { podSelector: {}, policyTypes: ["Ingress", "Egress"] },
+          },
+        ],
+      });
+    }
+
+    if (commandLine.includes("kubectl get namespaces")) {
+      return JSON.stringify({
+        items: [
+          {
+            metadata: {
+              name: "team-a",
+              labels: { "pod-security.kubernetes.io/enforce": "baseline" },
+            },
+          },
+        ],
+      });
+    }
+
+    throw new Error(`unexpected command: ${commandLine}`);
+  };
+
+  const report = scanLiveCluster({
+    clusterName: "prod",
+    context: "prod-context",
+    region: "ap-northeast-2",
+    commandRunner,
+  });
+  const statuses = statusByItem(report.findings);
+
+  assert.equal(report.mode, "live-cluster");
+  assert.equal(statuses.get("foundational/private-api-endpoint"), "pass");
+  assert.equal(statuses.get("foundational/private-subnets"), "pass");
+  assert.equal(statuses.get("foundational/default-deny-networkpolicy"), "pass");
+  assert.equal(statuses.get("foundational/pod-실행-권한-최소화"), "pass");
+  assert.equal(statuses.get("foundational/iam-k8s-mapping"), "pass");
+  assert.ok(report.findings.every((finding) => finding.phase === "Foundational"));
+  assert.ok(report.findings.every((finding) => finding.priority));
+  assert.ok(calls.every((call) => /^(aws (eks|ec2) (describe|list)|kubectl get)/.test(call)));
+});
+
+test("live scanner returns unknown findings when read-only commands cannot run", async () => {
+  const { scanLiveCluster } = await import("../skills/eks-maturity-advisor/scripts/scan_eks_maturity.mjs");
+
+  const report = scanLiveCluster({
+    clusterName: "prod",
+    context: "prod-context",
+    region: "ap-northeast-2",
+    commandRunner: ({ command }) => {
+      throw new Error(`${command} is not available`);
+    },
+  });
+
+  assert.equal(report.mode, "live-cluster");
+  assert.equal(report.findings.length, 5);
+  assert.ok(report.findings.every((finding) => finding.status === "unknown"));
+  assert.ok(report.findings.every((finding) => finding.priority === "P3"));
+  assert.ok(report.findings.every((finding) => finding.verify_commands.length > 0));
+});
+
+test("live scanner does not query the current kubectl context when live flags are missing", async () => {
+  const { scanLiveCluster } = await import("../skills/eks-maturity-advisor/scripts/scan_eks_maturity.mjs");
+  const calls = [];
+
+  const report = scanLiveCluster({
+    commandRunner: ({ command, args }) => {
+      calls.push([command, ...args].join(" "));
+      throw new Error("command should not run without explicit live scan inputs");
+    },
+  });
+
+  assert.equal(report.findings.length, 5);
+  assert.ok(report.findings.every((finding) => finding.status === "unknown"));
+  assert.deepEqual(calls, []);
 });
 
 test("skill release workflow packages the advisor on version tags", () => {
