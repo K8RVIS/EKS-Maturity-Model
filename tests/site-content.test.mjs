@@ -7,19 +7,19 @@ const root = path.resolve(new URL("..", import.meta.url).pathname);
 const docsRoot = path.join(root, "src/content/docs");
 const dataPath = path.join(root, "src/data/maturity-items.json");
 
-const expectedTitles = [
-  "Default ServiceAccount 사용을 제한하고 불필요한 토큰 마운트를 비활성화한다",
-  "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다",
-  "Public API endpoint 접근 CIDR을 신뢰 구간으로 제한한다",
-  "Ingress와 Load Balancer에서 TLS를 강제한다",
-  "Kubernetes API endpoint를 private-only로 전환한다",
-  "Worker node와 Pod를 private subnet에 배치한다",
-  "기본 deny NetworkPolicy를 적용한다",
-  "외부 진입점 TLS 인증서를 자동 관리한다",
-  "Workload 내 Hardcoded Secret을 제거한다",
-  "컨테이너 이미지를 배포 전 스캔하고 Critical/High 취약점 배포를 차단한다",
-  "Namespace별 ResourceQuota와 LimitRange를 적용한다",
-];
+const sourceDomains = ["접근 제어", "네트워크 보안", "데이터 보호", "Pod 보안"];
+const phaseDirectoryNames = new Map([
+  ["QuickWins", "Quick Wins"],
+  ["Foundational", "Foundational"],
+  ["foundational", "Foundational"],
+  ["Efficient", "Efficient"],
+  ["Optimized", "Optimized"],
+]);
+
+function titleFrom(markdown) {
+  const firstLine = markdown.split(/\r?\n/, 1)[0] ?? "";
+  return firstLine.replace(/^#\s+/, "").trim();
+}
 
 function listMarkdownFiles(dir) {
   if (!existsSync(dir)) return [];
@@ -29,6 +29,29 @@ function listMarkdownFiles(dir) {
     return /\.(md|mdx)$/.test(entry.name) ? [current] : [];
   });
 }
+
+function sourceMarkdownFiles() {
+  return sourceDomains.flatMap((domain) => {
+    const domainDir = path.join(root, domain);
+    return listMarkdownFiles(domainDir).filter((file) => {
+      const relative = path.relative(domainDir, file);
+      const [phaseDir] = relative.split(path.sep);
+      return phaseDirectoryNames.has(phaseDir);
+    });
+  });
+}
+
+const expectedItems = sourceMarkdownFiles().map((file) => {
+  const relative = path.relative(root, file);
+  const [domain, phaseDir] = relative.split(path.sep);
+  return {
+    title: titleFrom(readFileSync(file, "utf8")),
+    phase: phaseDirectoryNames.get(phaseDir),
+    domain,
+  };
+});
+
+const expectedTitles = expectedItems.map((item) => item.title);
 
 test("all existing model items are migrated into Starlight docs", () => {
   const files = listMarkdownFiles(docsRoot);
@@ -48,10 +71,22 @@ test("maturity data includes each item once with normalized metadata", () => {
   assert.deepEqual([...new Set(titles)].sort(), [...expectedTitles].sort());
 
   for (const item of items) {
-    assert.match(item.href, /^\/(quick-wins|foundational)\//);
-    assert.match(item.phase, /^(Quick Wins|Foundational)$/);
+    assert.match(item.href, /^\/(quick-wins|foundational|efficient|optimized)\//);
+    assert.match(item.phase, /^(Quick Wins|Foundational|Efficient|Optimized)$/);
     assert.ok(item.domain.length > 0);
     assert.ok(item.difficulty.length > 0);
+  }
+
+  for (const expected of expectedItems) {
+    assert.ok(
+      items.some(
+        (item) =>
+          item.title === expected.title &&
+          item.phase === expected.phase &&
+          item.domain === expected.domain,
+      ),
+      `${expected.title} should keep source phase and domain metadata`,
+    );
   }
 });
 
@@ -76,6 +111,13 @@ test("maturity matrix joins the GitHub Pages base path and item href safely", ()
   assert.doesNotMatch(component, /\$\{base\}\$\{href/);
 });
 
+test("bottom domain-specific view is removed from navigation and content", () => {
+  const config = readFileSync(path.join(root, "astro.config.mjs"), "utf8");
+
+  assert.doesNotMatch(config, /영역별 보기/);
+  assert.equal(existsSync(path.join(docsRoot, "domains")), false);
+});
+
 test("root redirect joins the GitHub Pages base path safely", () => {
   const page = readFileSync(path.join(root, "src/pages/index.astro"), "utf8");
 
@@ -90,18 +132,65 @@ test("Starlight table of contents is disabled for wider content pages", () => {
   assert.match(config, /tableOfContents:\s*false/);
 });
 
-test("maturity model board supports phase and domain filtering controls", () => {
+test("maturity model renders a table-only domain by phase matrix view", () => {
   const component = readFileSync(path.join(root, "src/components/MaturityMatrix.astro"), "utf8");
   const styles = readFileSync(path.join(root, "src/styles/custom.css"), "utf8");
+  const model = readFileSync(path.join(docsRoot, "model.mdx"), "utf8");
 
-  assert.match(component, /data-maturity-toolbar/);
-  assert.match(component, /data-filter-type="phase"/);
-  assert.match(component, /data-filter-type="domain"/);
+  assert.doesNotMatch(component, /data-maturity-toolbar/);
+  assert.doesNotMatch(component, /data-filter-type="phase"/);
+  assert.doesNotMatch(component, /data-filter-type="domain"/);
+  assert.doesNotMatch(component, /maturity-card-code/);
+  assert.doesNotMatch(component, /difficulty-badge/);
+  assert.doesNotMatch(component, /itemCode/);
+  assert.doesNotMatch(component, /selectedPhase/);
+  assert.match(component, /maturity-meta/);
+  assert.match(component, /phase-badge/);
+  assert.match(component, /item-badge/);
+  assert.match(component, /단계:/);
+  assert.match(component, /항목:/);
   assert.match(component, /data-phase-col/);
   assert.match(component, /data-phase-cell/);
-  assert.match(component, /selectedPhase/);
+  assert.match(component, /layout === "phase-domain"/);
+  assert.doesNotMatch(component, /data-phase-difficulty-table/);
   assert.match(styles, /\.maturity-board/);
-  assert.match(styles, /\.maturity-card-code/);
+  assert.match(styles, /\.maturity-meta/);
+  assert.match(styles, /\.phase-badge/);
+  assert.match(styles, /\.item-badge/);
+  assert.doesNotMatch(styles, /\.maturity-toolbar/);
+  assert.doesNotMatch(styles, /\.maturity-card-code/);
+  assert.doesNotMatch(styles, /\.difficulty-badge/);
+  assert.match(model, /행은 보안 영역/);
+  assert.match(model, /열은 성숙도 단계/);
+  assert.doesNotMatch(model, /필터/);
+});
+
+test("phase index pages use transposed table-only matrix views", () => {
+  assert.equal(existsSync(path.join(root, "src/components/PhaseDifficultyMatrix.astro")), false);
+
+  for (const slug of ["quick-wins", "foundational", "efficient", "optimized"]) {
+    const page = readFileSync(path.join(docsRoot, slug, "index.mdx"), "utf8");
+
+    assert.match(page, /import MaturityMatrix/);
+    assert.match(page, /<MaturityMatrix initialPhase=/);
+    assert.match(page, /layout="phase-domain"/);
+    assert.doesNotMatch(page, /난이도 기준/);
+    assert.doesNotMatch(page, /난이도별 보안 영역 매트릭스/);
+    assert.doesNotMatch(page, /행은 난이도/);
+  }
+});
+
+test("generated docs do not include difficulty criteria tables", () => {
+  const files = listMarkdownFiles(docsRoot);
+  const corpus = files.map((file) => readFileSync(file, "utf8")).join("\n");
+
+  assert.doesNotMatch(corpus, /## 난이도 기준/);
+  assert.doesNotMatch(corpus, /data-phase-difficulty-table/);
+  assert.doesNotMatch(corpus, /PhaseDifficultyMatrix/);
+  for (const slug of ["quick-wins", "foundational", "efficient", "optimized"]) {
+    const page = readFileSync(path.join(docsRoot, slug, "index.mdx"), "utf8");
+    assert.doesNotMatch(page, /<th>난이도<\/th>/);
+  }
 });
 
 test("content layout uses the full width beside the sidebar", () => {

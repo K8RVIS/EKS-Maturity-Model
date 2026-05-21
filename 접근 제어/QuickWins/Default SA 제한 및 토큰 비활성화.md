@@ -206,6 +206,14 @@ kubectl exec -n team-a deploy/api -- ls /var/run/secrets/kubernetes.io/serviceac
 - **AWS 비용 발생 여부 및 예상 규모:** 없음
 - **오픈소스 vs 상용 도구 선택 시 비용 차이:** 없음. Kubernetes 기본 기능과 매니페스트 수정만으로 적용 가능
 
+## Assessment 체크리스트
+
+- [ ] `default` ServiceAccount에 `automountServiceAccountToken: false`가 설정되어 있는가?
+- [ ] 일반 애플리케이션 워크로드가 `default` ServiceAccount를 직접 사용하지 않는가?
+- [ ] Kubernetes API 접근이 필요한 워크로드만 전용 ServiceAccount를 사용하고 있는가?
+- [ ] API 접근이 필요 없는 워크로드에는 `automountServiceAccountToken: false`가 적용되어 있는가?
+- [ ] `eks-secure-infra`의 `api` 워크로드가 `default` SA 대신 전용 SA를 사용하도록 수정되었는가?
+
 ## 참고 자료
 
 - [AWS EKS Best Practices - Identity and Access Management](https://aws.github.io/aws-eks-best-practices/security/docs/iam/)
@@ -221,41 +229,28 @@ kubectl exec -n team-a deploy/api -- ls /var/run/secrets/kubernetes.io/serviceac
 - **CIS Amazon EKS Benchmark v1.8.0**
   `4.1.5 Ensure that default service accounts are not actively used`
   `default` SA를 워크로드 실행 계정으로 계속 사용하지 말고, API 접근이 필요한 워크로드에는 전용 SA를 만들도록 권고한다.
-- **CIS Amazon EKS Benchmark v1.8.0**
   `4.1.6 Ensure that Service Account Tokens are only mounted where necessary`
   Pod가 실제로 API 서버와 통신해야 하는 경우에만 토큰을 마운트하고, 그렇지 않으면 `automountServiceAccountToken: false`를 적용하도록 권고한다.
-- **CIS Amazon EKS Benchmark v1.8.0**
   `4.1.12 Minimize access to the service account token creation`
   토큰을 새로 발급하거나 생성할 수 있는 권한 자체도 최소화해야 하므로, SA 운영은 생성 권한 관리와 함께 봐야 한다.
-- **CIS Amazon EKS Benchmark v1.8.0**
   `4.5.2 The default namespace should not be used`
   `default` SA를 줄이는 작업은 결국 `default` 네임스페이스 의존도를 낮추는 운영 원칙과도 연결된다.
+
 - **CIS Kubernetes Benchmark v1.12.0**
   `5.1.5 Ensure that default service accounts are not actively used`
   Kubernetes 일반 기준에서도 `default` SA에 비기본 권한을 부여하지 말고, 전용 SA를 분리하도록 요구한다.
-- **CIS Kubernetes Benchmark v1.12.0**
   `5.1.6 Ensure that Service Account Tokens are only mounted where necessary`
   토큰 자동 마운트는 필요한 Pod에만 허용해야 하며, 불필요한 토큰 노출은 privilege escalation 경로가 될 수 있다고 본다.
-- **CIS Kubernetes Benchmark v1.12.0**
   `5.1.13 Minimize access to the service account token creation`
   SA 토큰 생성 권한을 가진 주체가 많을수록 우회 경로가 늘어나므로, 운영자 권한과 자동화 계정 권한도 함께 검토해야 한다.
-- **CIS Kubernetes Benchmark v1.12.0**
   `5.6.4 The default namespace should not be used`
   실무에서는 `default` 네임스페이스와 `default` SA 사용이 함께 굳어지는 경우가 많아, 두 항목을 같이 관리하는 편이 효과적이다.
+
 - **NSA/CISA Kubernetes Hardening Guidance**
   `Protecting Pod service account tokens`
   많은 애플리케이션은 ServiceAccount에 직접 접근할 필요가 없으며, 애플리케이션이 침해되면 Pod 내부 토큰이 공격자에게 탈취될 수 있으므로 `automountServiceAccountToken: false`를 사용하라고 권고한다.
-- **NSA/CISA Kubernetes Hardening Guidance**
   `Authentication and Authorization / ServiceAccount Admission Controller`
   Pod 정의에 SA를 지정하지 않으면 admission 단계에서 `default` SA가 자동 연결될 수 있으므로, 워크로드 정의에서 SA와 토큰 정책을 명시적으로 선언해야 한다는 배경 근거가 된다.
-
-## Assessment 체크리스트
-
-- [ ] `default` ServiceAccount에 `automountServiceAccountToken: false`가 설정되어 있는가?
-- [ ] 일반 애플리케이션 워크로드가 `default` ServiceAccount를 직접 사용하지 않는가?
-- [ ] Kubernetes API 접근이 필요한 워크로드만 전용 ServiceAccount를 사용하고 있는가?
-- [ ] API 접근이 필요 없는 워크로드에는 `automountServiceAccountToken: false`가 적용되어 있는가?
-- [ ] `eks-secure-infra`의 `api` 워크로드가 `default` SA 대신 전용 SA를 사용하도록 수정되었는가?
 
 #### 대규모 환경을 위한 patch 자동화 방안
 

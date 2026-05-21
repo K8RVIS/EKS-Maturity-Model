@@ -1,0 +1,4 @@
+interface:
+  display_name: "EKS Maturity Advisor"
+  short_description: "Assess EKS Quick Wins and Foundational maturity"
+  default_prompt: "Use $eks-maturity-advisor to assess this EKS repository against Quick Wins maturity controls."

@@ -10,7 +10,7 @@
 
 ---
 
-#### 개요
+## 왜 필요한가
 
 RBAC(Role-Based Access Control)는 Kubernetes 클러스터 내부의 사용자, 그룹, ServiceAccount, Pod가 Kubernetes 리소스에 대해 어떤 작업을 수행할 수 있는지 정의하는 권한 제어 체계이다.
 
@@ -402,13 +402,19 @@ ClusterRoleBinding을 적용했다면 기대 결과는 `yes`이다. 적용하지
 - **AWS 비용 발생 여부 및 예상 규모:** 없음. Kubernetes 기본 RBAC 리소스 생성만으로 적용 가능
 - **정책 및 권한 관리 도구:** 대규모 환경에서는 Kyverno, OPA Gatekeeper, RBAC Manager 같은 정책 또는 권한 관리 도구를 추가로 사용할 수 있다.
 
+## Assessment 체크리스트
+
+- [ ] 네임스페이스별로 필요한 권한 범위가 정의되어 있는가?
+- [ ] ServiceAccount 또는 사용자에 RoleBinding이 명시적으로 연결되어 있는가?
+- [ ] 적용한 권한에 맞게 다른 네임스페이스에 대한 접근이 차단되는가?
+- [ ] ClusterRoleBinding이 필요한 경우에만 사용되고 있는가?
+- [ ] Role 또는 ClusterRole에 불필요한 `*` wildcard 권한이 없는가?
+
 ## 참고 자료
 
 - [Amazon EKS Best Practices - Identity and Access Management](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html)
 - [Kubernetes - Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 - [Kubernetes - Configure Service Accounts for Pods](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/)
-- [CIS Kubernetes Benchmark v1.12.0](../CIS_Kubernetes_Benchmark_V1.12.0_PDF.md)
-- [NSA/CISA Kubernetes Hardening Guidance](../CTR_KUBERNETES_HARDENING_GUIDANCE_1.2_20220829.md)
 
 ## 연결된 보안 가이드라인 항목
 
@@ -426,11 +432,3 @@ ClusterRoleBinding을 적용했다면 기대 결과는 `yes`이다. 적용하지
 - **NSA/CISA Kubernetes Hardening Guidance**
   `RBAC and least privilege`
   사용자와 ServiceAccount에 필요한 최소 권한만 부여하고, 클러스터 전체 권한은 엄격히 제한할 것을 권고한다.
-
-## Assessment 체크리스트
-
-- [ ] 네임스페이스별로 필요한 권한 범위가 정의되어 있는가?
-- [ ] ServiceAccount 또는 사용자에 RoleBinding이 명시적으로 연결되어 있는가?
-- [ ] 적용한 권한에 맞게 다른 네임스페이스에 대한 접근이 차단되는가?
-- [ ] ClusterRoleBinding이 필요한 경우에만 사용되고 있는가?
-- [ ] Role 또는 ClusterRole에 불필요한 `*` wildcard 권한이 없는가?

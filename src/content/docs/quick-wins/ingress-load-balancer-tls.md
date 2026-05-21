@@ -1,13 +1,13 @@
 ---
 title: "Ingress와 Load Balancer에서 TLS를 강제한다"
-description: "왜 필요한가"
+description: "외부 사용자와 EKS 클러스터 경계 사이의 트래픽은 가장 먼저 암호화해야 하는 구간이다. Ingress나 Load Balancer가 HTTP만 허용하면 로그인 정보, 세션 쿠키, API 토큰, 개인정보가 네트워크 구간에서 평문으로 노출될 수 있고, 중간자 공격을 통해 "
 phase: "Quick Wins"
 domain: "네트워크 보안"
-difficulty: "★☆☆"
+difficulty: "미정"
 owner: "공통 (전체 실습)"
-order: 40
+order: 30
 sidebar:
-  order: 40
+  order: 30
 ---
 
 ## 왜 필요한가
@@ -317,9 +317,8 @@ openssl s_client -connect <domain>:443 -servername <domain> -tls1_3 </dev/null
 - **규정 준수 영향:** 개인정보, 결제, 인증 정보를 다루는 서비스에서 전송 구간 암호화 미적용은 보안 심사와 규정 준수 실패 사유가 될 수 있다.
 - **심각도:** **높음**. 외부 진입점의 평문 통신은 자격 증명 탈취와 중간자 공격으로 바로 연결될 수 있다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
-- **담당자 및 예상 소요 시간:** 플랫폼 엔지니어 1명 기준으로 인증서 발급 및 DNS 검증 30분~1시간, Ingress 변경 30분, 리다이렉트와 TLS 정책 검증 30분 내외
 - **AWS 비용 발생 여부 및 예상 규모:** 공인 ACM 인증서 자체는 무료다. ALB, NLB, Route 53 hosted zone, DNS query, Load Balancer LCU 비용은 별도로 발생한다.
 - **간접 비용:** 가져온 인증서, 사내 CA, ACM Private CA, cert-manager 운영을 선택하면 갱신 자동화와 모니터링 운영 부담이 생긴다.
 - **오픈소스 vs 상용 도구 선택 시 비용 차이:** cert-manager는 오픈소스로 사용할 수 있다. ACM Private CA, 상용 인증서, 상용 모니터링 도구를 선택하면 월별 고정 비용 또는 인증서 발급 비용이 발생한다.
