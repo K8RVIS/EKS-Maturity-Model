@@ -5,9 +5,9 @@ phase: "Quick Wins"
 domain: "데이터 보호"
 difficulty: "★★☆"
 owner: "공통 (전체 실습)"
-order: 40
+order: 30
 sidebar:
-  order: 40
+  order: 30
 ---
 
 ## 왜 필요한가

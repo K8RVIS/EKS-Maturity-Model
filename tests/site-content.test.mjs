@@ -90,6 +90,42 @@ test("maturity data includes each item once with normalized metadata", () => {
   }
 });
 
+test("latest source phase and domain moves are reflected without changing stable slugs", () => {
+  const items = JSON.parse(readFileSync(dataPath, "utf8"));
+  const podIam = items.find((item) => item.title === "Pod별 IAM Role 부여를 통해 워크로드별 AWS 권한을 분리한다");
+  const nonRoot = items.find((item) => item.title === "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다");
+
+  assert.deepEqual(
+    {
+      phase: podIam?.phase,
+      domain: podIam?.domain,
+      href: podIam?.href,
+    },
+    {
+      phase: "Foundational",
+      domain: "접근 제어",
+      href: "/foundational/pod별-iam-role-부여",
+    },
+  );
+  assert.equal(existsSync(path.join(docsRoot, "foundational", "pod별-iam-role-부여.md")), true);
+  assert.equal(existsSync(path.join(docsRoot, "efficient", "pod별-iam-role-부여.md")), false);
+
+  assert.deepEqual(
+    {
+      phase: nonRoot?.phase,
+      domain: nonRoot?.domain,
+      href: nonRoot?.href,
+    },
+    {
+      phase: "Quick Wins",
+      domain: "Pod 보안",
+      href: "/quick-wins/non-root-containers",
+    },
+  );
+  assert.equal(existsSync(path.join(docsRoot, "quick-wins", "non-root-containers.md")), true);
+  assert.equal(existsSync(path.join(docsRoot, "quick-wins", "container-root-권한-실행-제한.md")), false);
+});
+
 test("GitHub Pages and design integration files are present", () => {
   const files = [
     "astro.config.mjs",

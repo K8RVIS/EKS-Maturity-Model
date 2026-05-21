@@ -5,9 +5,9 @@ phase: "Foundational"
 domain: "데이터 보호"
 difficulty: "★★☆"
 owner: "공통 (전체 실습)"
-order: 70
+order: 80
 sidebar:
-  order: 70
+  order: 80
 ---
 
 ## 왜 필요한가

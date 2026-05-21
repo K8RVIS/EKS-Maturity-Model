@@ -1,13 +1,13 @@
 ---
 title: "Pod별 IAM Role 부여를 통해 워크로드별 AWS 권한을 분리한다"
 description: "EKS에서 실행되는 Pod가 S3, Secrets Manager, SQS, DynamoDB, KMS 같은 AWS 리소스에 접근해야 하는 경우가 있다. 이때 Node IAM Role에 모든 권한을 부여하면 같은 Node 위에서 실행되는 여러 Pod가 과도한 AWS 권한을"
-phase: "Efficient"
+phase: "Foundational"
 domain: "접근 제어"
 difficulty: "미정"
 owner: "공통 (전체 실습)"
-order: 10
+order: 30
 sidebar:
-  order: 10
+  order: 30
 ---
 
 ## 왜 필요한가

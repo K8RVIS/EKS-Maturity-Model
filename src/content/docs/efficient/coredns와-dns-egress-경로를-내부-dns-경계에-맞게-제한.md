@@ -5,9 +5,9 @@ phase: "Efficient"
 domain: "네트워크 보안"
 difficulty: "★★☆"
 owner: "공통 (전체 실습)"
-order: 20
+order: 10
 sidebar:
-  order: 20
+  order: 10
 ---
 
 ## 왜 필요한가

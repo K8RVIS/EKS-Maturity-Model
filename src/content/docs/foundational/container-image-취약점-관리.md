@@ -5,9 +5,9 @@ phase: "Foundational"
 domain: "Pod 보안"
 difficulty: "★★☆"
 owner: "장해윤"
-order: 80
+order: 90
 sidebar:
-  order: 80
+  order: 90
 ---
 
 ## 왜 필요한가

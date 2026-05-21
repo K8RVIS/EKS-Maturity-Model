@@ -217,7 +217,7 @@ test("generated skill catalog covers Quick Wins and Foundational docs from sourc
   assert.deepEqual(phases, new Set(["Quick Wins", "Foundational"]));
   assert.ok(catalog.items.length >= 16);
   assert.equal(nonRoot.title, "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다");
-  assert.equal(nonRoot.domain, "접근 제어");
+  assert.equal(nonRoot.domain, "Pod 보안");
   assert.ok(nonRoot.checks.length > 0);
   assert.ok(nonRoot.verify_commands.some((command) => command.includes("kubectl")));
   assert.equal(nonRoot.source_reference, "src/content/docs/quick-wins/non-root-containers.md");
@@ -375,7 +375,7 @@ test("repo scanner includes domain and priority metadata for sorted findings", a
   const nonRoot = findingByItem(report.findings, "quick-wins/non-root-containers");
   const quota = findingByItem(report.findings, "quick-wins/resource-quota-limitrange");
 
-  assert.equal(nonRoot.domain, "접근 제어");
+  assert.equal(nonRoot.domain, "Pod 보안");
   assert.equal(nonRoot.priority, "P1");
   assert.equal(quota.priority, "P2");
   assert.deepEqual(

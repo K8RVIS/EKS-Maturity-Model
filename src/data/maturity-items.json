@@ -1,19 +1,11 @@
 [
   {
-    "title": "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다",
-    "phase": "Quick Wins",
-    "domain": "접근 제어",
-    "difficulty": "★☆☆",
-    "href": "/quick-wins/non-root-containers",
-    "order": 10
-  },
-  {
     "title": "Default ServiceAccount 사용을 제한하고 불필요한 토큰 마운트를 비활성화한다",
     "phase": "Quick Wins",
     "domain": "접근 제어",
     "difficulty": "★☆☆",
     "href": "/quick-wins/default-service-account",
-    "order": 20
+    "order": 10
   },
   {
     "title": "Ingress와 Load Balancer에서 TLS를 강제한다",
@@ -21,7 +13,7 @@
     "domain": "네트워크 보안",
     "difficulty": "미정",
     "href": "/quick-wins/ingress-load-balancer-tls",
-    "order": 30
+    "order": 20
   },
   {
     "title": "Pod 연계 external Secret storage를 사용한다",
@@ -29,7 +21,7 @@
     "domain": "데이터 보호",
     "difficulty": "★★☆",
     "href": "/quick-wins/aws-secret-manager-사용",
-    "order": 40
+    "order": 30
   },
   {
     "title": "Cluster Resource 사용을 제한한다",
@@ -37,7 +29,7 @@
     "domain": "Pod 보안",
     "difficulty": "★☆☆",
     "href": "/quick-wins/resource-quota-limitrange",
-    "order": 50
+    "order": 40
   },
   {
     "title": "Container Image Scan 및 차단을 한다",
@@ -45,6 +37,14 @@
     "domain": "Pod 보안",
     "difficulty": "★★☆",
     "href": "/quick-wins/container-image-scanning",
+    "order": 50
+  },
+  {
+    "title": "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다",
+    "phase": "Quick Wins",
+    "domain": "Pod 보안",
+    "difficulty": "★☆☆",
+    "href": "/quick-wins/non-root-containers",
     "order": 60
   },
   {
@@ -72,12 +72,20 @@
     "order": 20
   },
   {
+    "title": "Pod별 IAM Role 부여를 통해 워크로드별 AWS 권한을 분리한다",
+    "phase": "Foundational",
+    "domain": "접근 제어",
+    "difficulty": "미정",
+    "href": "/foundational/pod별-iam-role-부여",
+    "order": 30
+  },
+  {
     "title": "기본 deny NetworkPolicy를 적용한다",
     "phase": "Foundational",
     "domain": "네트워크 보안",
     "difficulty": "미정",
     "href": "/foundational/default-deny-networkpolicy",
-    "order": 30
+    "order": 40
   },
   {
     "title": "Kubernetes API endpoint를 private-only로 전환한다",
@@ -85,7 +93,7 @@
     "domain": "네트워크 보안",
     "difficulty": "★★☆",
     "href": "/foundational/private-api-endpoint",
-    "order": 40
+    "order": 50
   },
   {
     "title": "Worker node와 Pod를 private subnet에 배치한다",
@@ -93,7 +101,7 @@
     "domain": "네트워크 보안",
     "difficulty": "미정",
     "href": "/foundational/private-subnets",
-    "order": 50
+    "order": 60
   },
   {
     "title": "EBS 기반 Workload Storage data를 보호한다",
@@ -101,7 +109,7 @@
     "domain": "데이터 보호",
     "difficulty": "★☆☆",
     "href": "/foundational/ebs-기반-workload-storage-data-보호",
-    "order": 60
+    "order": 70
   },
   {
     "title": "Workload 내 Hardcoded Secret을 탐지하고 Secrets Manager 참조로 제거한다",
@@ -109,7 +117,7 @@
     "domain": "데이터 보호",
     "difficulty": "★★☆",
     "href": "/foundational/workload-내-hardcoded-secret-제거",
-    "order": 70
+    "order": 80
   },
   {
     "title": "Container Image 취약점을 관리한다",
@@ -117,7 +125,7 @@
     "domain": "Pod 보안",
     "difficulty": "★★☆",
     "href": "/foundational/container-image-취약점-관리",
-    "order": 80
+    "order": 90
   },
   {
     "title": "Grafana로 클러스터 메트릭을 시각화한다",
@@ -125,7 +133,7 @@
     "domain": "Pod 보안",
     "difficulty": "★★☆",
     "href": "/foundational/grafana-대시보드-연결",
-    "order": 90
+    "order": 100
   },
   {
     "title": "네임스페이스에 PSS Baseline을 적용하고 비준수 Pod 실행을 차단한다",
@@ -133,15 +141,7 @@
     "domain": "Pod 보안",
     "difficulty": "★☆☆",
     "href": "/foundational/pod-실행-권한-최소화",
-    "order": 100
-  },
-  {
-    "title": "Pod별 IAM Role 부여를 통해 워크로드별 AWS 권한을 분리한다",
-    "phase": "Efficient",
-    "domain": "접근 제어",
-    "difficulty": "미정",
-    "href": "/efficient/pod별-iam-role-부여",
-    "order": 10
+    "order": 110
   },
   {
     "title": "CoreDNS와 DNS egress 경로를 내부 DNS 경계에 맞게 제한한다",
@@ -149,7 +149,7 @@
     "domain": "네트워크 보안",
     "difficulty": "★★☆",
     "href": "/efficient/coredns와-dns-egress-경로를-내부-dns-경계에-맞게-제한",
-    "order": 20
+    "order": 10
   },
   {
     "title": "kubelet API 접근을 노드 보안 그룹 경계로 제한한다",
@@ -157,7 +157,7 @@
     "domain": "네트워크 보안",
     "difficulty": "★★☆",
     "href": "/efficient/kubelet-api-접근-제한",
-    "order": 30
+    "order": 20
   },
   {
     "title": "Secret 접근을 감사하고 추적한다",
@@ -165,7 +165,7 @@
     "domain": "데이터 보호",
     "difficulty": "★★☆",
     "href": "/efficient/secret-접근-감사",
-    "order": 40
+    "order": 30
   },
   {
     "title": "AlertManager 및 보안 알림 규칙을 추가한다",
@@ -173,7 +173,7 @@
     "domain": "Pod 보안",
     "difficulty": "★★☆",
     "href": "/efficient/alertmanager-및-보안-알림-규칙-추가",
-    "order": 50
+    "order": 40
   },
   {
     "title": "Cluster 감사 추적 및 Event Logging 체계를 구축한다",
@@ -181,7 +181,7 @@
     "domain": "Pod 보안",
     "difficulty": "★★★",
     "href": "/efficient/cluster-감사-추적-및-event-logging-체계-구축",
-    "order": 60
+    "order": 50
   },
   {
     "title": "Security Metric 수집 및 Runtime 시각화를 구축한다",
@@ -189,7 +189,7 @@
     "domain": "Pod 보안",
     "difficulty": "★★★",
     "href": "/efficient/security-metric-수집-및-runtime-시각화-구축",
-    "order": 70
+    "order": 60
   },
   {
     "title": "Break-glass 감사 자동화를 통해 긴급 관리자 접근을 JIT로 부여하고 추적한다",

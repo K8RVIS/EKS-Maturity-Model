@@ -5,9 +5,9 @@ phase: "Efficient"
 domain: "Pod 보안"
 difficulty: "★★☆"
 owner: "장해윤"
-order: 50
+order: 40
 sidebar:
-  order: 50
+  order: 40
 ---
 
 ## 왜 필요한가

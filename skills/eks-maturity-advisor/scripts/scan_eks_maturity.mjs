@@ -8,7 +8,7 @@ const WORKLOAD_KINDS = new Set(["Deployment", "StatefulSet", "DaemonSet", "Repli
 const SECRET_NAME_PATTERN = /(password|passwd|secret|token|api[_-]?key|access[_-]?key|private[_-]?key)/i;
 const SYSTEM_NAMESPACES = new Set(["kube-system", "kube-public", "kube-node-lease"]);
 const ITEM_METADATA = {
-  "quick-wins/non-root-containers": { phase: "Quick Wins", domain: "접근 제어" },
+  "quick-wins/non-root-containers": { phase: "Quick Wins", domain: "Pod 보안" },
   "quick-wins/default-service-account": { phase: "Quick Wins", domain: "접근 제어" },
   "quick-wins/ingress-load-balancer-tls": { phase: "Quick Wins", domain: "네트워크 보안" },
   "quick-wins/resource-quota-limitrange": { phase: "Quick Wins", domain: "Pod 보안" },

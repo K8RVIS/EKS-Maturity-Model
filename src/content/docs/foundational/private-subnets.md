@@ -5,9 +5,9 @@ phase: "Foundational"
 domain: "네트워크 보안"
 difficulty: "미정"
 owner: "공통 (전체 실습)"
-order: 50
+order: 60
 sidebar:
-  order: 50
+  order: 60
 ---
 
 ## 왜 필요한가

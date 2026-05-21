@@ -257,6 +257,28 @@
       "source_reference": "src/content/docs/foundational/iam-k8s-mapping.md"
     },
     {
+      "item_id": "foundational/pod별-iam-role-부여",
+      "phase": "Foundational",
+      "domain": "접근 제어",
+      "title": "Pod별 IAM Role 부여를 통해 워크로드별 AWS 권한을 분리한다",
+      "difficulty": "미정",
+      "href": "/foundational/pod별-iam-role-부여",
+      "checks": [
+        "EKS Pod Identity Agent가 설치되어 있고 `ACTIVE` 상태인가?",
+        "AWS 리소스 접근이 필요한 Pod 전용 ServiceAccount가 분리되어 있는가?",
+        "ServiceAccount와 IAM Role이 Pod Identity Association으로 연결되어 있는가?",
+        "IAM Policy가 특정 S3 bucket과 prefix로 제한되어 있는가?",
+        "Pod 내부에서 `aws sts get-caller-identity` 결과가 전용 IAM Role로 확인되는가?",
+        "허용된 S3 prefix 접근은 성공하는가?",
+        "허용되지 않은 S3 bucket 또는 prefix 접근은 실패하는가?",
+        "다른 ServiceAccount 또는 default ServiceAccount에서는 같은 S3 접근이 차단되는가?"
+      ],
+      "verify_commands": [
+        "aws eks describe-addon \\\n--cluster-name [cluster-name] \\\n--addon-name eks-pod-identity-agent \\\n--region [region] \\\n--query \"addon.status\" \\\n--output text"
+      ],
+      "source_reference": "src/content/docs/foundational/pod별-iam-role-부여.md"
+    },
+    {
       "item_id": "quick-wins/container-image-scanning",
       "phase": "Quick Wins",
       "domain": "Pod 보안",
@@ -277,6 +299,27 @@
         "AWS_PROFILE=<PROFILE> aws inspector2 get-member \\\n--account-id $(aws sts get-caller-identity --query Account --output text) \\\n--region ap-northeast-2"
       ],
       "source_reference": "src/content/docs/quick-wins/container-image-scanning.md"
+    },
+    {
+      "item_id": "quick-wins/non-root-containers",
+      "phase": "Quick Wins",
+      "domain": "Pod 보안",
+      "title": "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다",
+      "difficulty": "★☆☆",
+      "href": "/quick-wins/non-root-containers",
+      "checks": [
+        "Deployment 또는 Pod에 `runAsNonRoot: true`가 설정되어 있는가?",
+        "`runAsUser`와 `runAsGroup`이 0이 아닌 UID/GID로 명시되어 있는가?",
+        "컨테이너에 `readOnlyRootFilesystem: true`가 설정되어 있는가?",
+        "컨테이너에 `allowPrivilegeEscalation: false`이 적용되어 있는가?",
+        "애플리케이션이 쓰는 경로가 루트 파일시스템이 아니라 명시적인 볼륨으로 분리되어 있는가?",
+        "`kubectl exec -- id` 결과가 `uid=0(root)`가 아님을 확인했는가?",
+        "루트 파일시스템 쓰기 시도 시 `Read-only file system` 오류가 발생하는가?"
+      ],
+      "verify_commands": [
+        "kubectl get deploy web -n <namespace명> \\\n-o jsonpath='{.spec.template.spec.securityContext}{\"\\n\"}'\nkubectl get deploy web -n <namespace명> \\\n-o jsonpath='{.spec.template.spec.containers[0].securityContext}{\"\\n\"}'"
+      ],
+      "source_reference": "src/content/docs/quick-wins/non-root-containers.md"
     },
     {
       "item_id": "quick-wins/prometheus-모니터링-활성화-및-메트릭-수집",
@@ -390,27 +433,6 @@
         "kubectl get sa default -n team-a -o jsonpath='{.automountServiceAccountToken}{\"\\n\"}'\nkubectl get deploy api -n team-a -o jsonpath='{.spec.template.spec.serviceAccountName}{\"\\n\"}'\nkubectl get deploy api -n team-a -o jsonpath='{.spec.template.spec.automountServiceAccountToken}{\"\\n\"}'\nkubectl exec -n team-a deploy/api -- ls /var/run/secrets/kubernetes.io/serviceaccount"
       ],
       "source_reference": "src/content/docs/quick-wins/default-service-account.md"
-    },
-    {
-      "item_id": "quick-wins/non-root-containers",
-      "phase": "Quick Wins",
-      "domain": "접근 제어",
-      "title": "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다",
-      "difficulty": "★☆☆",
-      "href": "/quick-wins/non-root-containers",
-      "checks": [
-        "Deployment 또는 Pod에 `runAsNonRoot: true`가 설정되어 있는가?",
-        "`runAsUser`와 `runAsGroup`이 0이 아닌 UID/GID로 명시되어 있는가?",
-        "컨테이너에 `readOnlyRootFilesystem: true`가 설정되어 있는가?",
-        "컨테이너에 `allowPrivilegeEscalation: false`이 적용되어 있는가?",
-        "애플리케이션이 쓰는 경로가 루트 파일시스템이 아니라 명시적인 볼륨으로 분리되어 있는가?",
-        "`kubectl exec -- id` 결과가 `uid=0(root)`가 아님을 확인했는가?",
-        "루트 파일시스템 쓰기 시도 시 `Read-only file system` 오류가 발생하는가?"
-      ],
-      "verify_commands": [
-        "kubectl get deploy web -n <namespace명> \\\n-o jsonpath='{.spec.template.spec.securityContext}{\"\\n\"}'\nkubectl get deploy web -n <namespace명> \\\n-o jsonpath='{.spec.template.spec.containers[0].securityContext}{\"\\n\"}'"
-      ],
-      "source_reference": "src/content/docs/quick-wins/non-root-containers.md"
     }
   ]
 }

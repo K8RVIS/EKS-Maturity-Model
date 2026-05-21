@@ -5,9 +5,9 @@ phase: "Quick Wins"
 domain: "접근 제어"
 difficulty: "★☆☆"
 owner: "공통 (전체 실습)"
-order: 20
+order: 10
 sidebar:
-  order: 20
+  order: 10
 ---
 
 ## 왜 필요한가

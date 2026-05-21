@@ -58,6 +58,7 @@ const phaseOrder = new Map(phases.map((phase, index) => [phase.phase, index]));
 const slugOverrides = new Map([
   ["접근 제어/QuickWins/Default SA 제한 및 토큰 비활성화.md", "default-service-account"],
   ["접근 제어/QuickWins/container root 권한 실행 제한.md", "non-root-containers"],
+  ["Pod 보안/QuickWins/container root 권한 실행 제한.md", "non-root-containers"],
   ["네트워크 보안/QuickWins/Ingress와 Load Balancer에 TLS 강제.md", "ingress-load-balancer-tls"],
   ["네트워크 보안/Foundational/Kubernetes API endpoint를 private-only 전환.md", "private-api-endpoint"],
   ["네트워크 보안/Foundational/Worker node, Pod를 private subnet 배치.md", "private-subnets"],
