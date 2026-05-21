@@ -5,9 +5,9 @@ phase: "Foundational"
 domain: "데이터 보호"
 difficulty: "★☆☆"
 owner: "남윤겸, 최은소"
-order: 70
+order: 60
 sidebar:
-  order: 70
+  order: 60
 ---
 
 ## 왜 필요한가

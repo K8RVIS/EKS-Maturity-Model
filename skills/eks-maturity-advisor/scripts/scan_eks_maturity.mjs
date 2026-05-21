@@ -15,7 +15,7 @@ const ITEM_METADATA = {
   "quick-wins/aws-secret-manager-사용": { phase: "Quick Wins", domain: "데이터 보호" },
   "foundational/private-api-endpoint": { phase: "Foundational", domain: "네트워크 보안" },
   "foundational/private-subnets": { phase: "Foundational", domain: "네트워크 보안" },
-  "foundational/default-deny-networkpolicy": { phase: "Foundational", domain: "네트워크 보안" },
+  "efficient/default-deny-networkpolicy": { phase: "Efficient", domain: "네트워크 보안" },
   "foundational/pod-실행-권한-최소화": { phase: "Foundational", domain: "Pod 보안" },
   "foundational/iam-k8s-mapping": { phase: "Foundational", domain: "접근 제어" },
   "foundational/container-image-취약점-관리": { phase: "Foundational", domain: "Pod 보안" },
@@ -455,21 +455,21 @@ function checkLivePrivateSubnets(options) {
 
 function checkLiveDefaultDenyNetworkPolicy(options) {
   const verifyCommands = ["kubectl get pods -A -o json", "kubectl get networkpolicy -A -o json"];
-  if (!options.context) return missingLiveConfig("foundational/default-deny-networkpolicy", ["context"], verifyCommands);
+  if (!options.context) return missingLiveConfig("efficient/default-deny-networkpolicy", ["context"], verifyCommands);
 
   const pods = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "pods", "-A", "-o", "json"], options));
   if (!pods.ok) {
-    return commandUnknown("foundational/default-deny-networkpolicy", pods.error, "선택한 context로 kubectl을 사용해 Pod 목록을 조회하세요.", verifyCommands);
+    return commandUnknown("efficient/default-deny-networkpolicy", pods.error, "선택한 context로 kubectl을 사용해 Pod 목록을 조회하세요.", verifyCommands);
   }
 
   const workloadNamespaces = applicationNamespacesFromPods(pods.data);
   if (workloadNamespaces.size === 0) {
-    return finding("foundational/default-deny-networkpolicy", "unknown", "medium", ["애플리케이션 워크로드 네임스페이스를 찾지 못했습니다."], "워크로드가 생성된 뒤 다시 점검하거나 네임스페이스 범위를 명시적으로 제공하세요.", verifyCommands);
+    return finding("efficient/default-deny-networkpolicy", "unknown", "medium", ["애플리케이션 워크로드 네임스페이스를 찾지 못했습니다."], "워크로드가 생성된 뒤 다시 점검하거나 네임스페이스 범위를 명시적으로 제공하세요.", verifyCommands);
   }
 
   const policies = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "networkpolicy", "-A", "-o", "json"], options));
   if (!policies.ok) {
-    return commandUnknown("foundational/default-deny-networkpolicy", policies.error, "선택한 context로 kubectl을 사용해 NetworkPolicy 객체를 조회하세요.", verifyCommands);
+    return commandUnknown("efficient/default-deny-networkpolicy", policies.error, "선택한 context로 kubectl을 사용해 NetworkPolicy 객체를 조회하세요.", verifyCommands);
   }
 
   const protectedNamespaces = new Set(
@@ -480,7 +480,7 @@ function checkLiveDefaultDenyNetworkPolicy(options) {
   const missing = [...workloadNamespaces].filter((namespace) => !protectedNamespaces.has(namespace));
 
   return finding(
-    "foundational/default-deny-networkpolicy",
+    "efficient/default-deny-networkpolicy",
     missing.length > 0 ? "fail" : "pass",
     missing.length > 0 ? "high" : "low",
     missing.length > 0 ? missing.map((namespace) => `네임스페이스 ${namespace}에 default deny NetworkPolicy가 없습니다.`) : [`${workloadNamespaces.size}개 워크로드 네임스페이스에 default deny NetworkPolicy가 적용되어 있습니다.`],

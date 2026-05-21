@@ -207,20 +207,26 @@ function successfulLiveCommandRunner(calls = []) {
   };
 }
 
-test("generated skill catalog covers Quick Wins and Foundational docs from source content", async () => {
+test("generated skill catalog covers Quick Wins, Foundational, and Efficient docs from source content", async () => {
   const { buildCatalog } = await import("../skills/eks-maturity-advisor/scripts/generate_catalog.mjs");
 
   const catalog = buildCatalog({ root });
   const phases = new Set(catalog.items.map((item) => item.phase));
   const nonRoot = catalog.items.find((item) => item.item_id === "quick-wins/non-root-containers");
+  const defaultDeny = catalog.items.find((item) => item.item_id === "efficient/default-deny-networkpolicy");
 
-  assert.deepEqual(phases, new Set(["Quick Wins", "Foundational"]));
+  assert.deepEqual(phases, new Set(["Quick Wins", "Foundational", "Efficient"]));
   assert.ok(catalog.items.length >= 16);
   assert.equal(nonRoot.title, "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다");
   assert.equal(nonRoot.domain, "Pod 보안");
   assert.ok(nonRoot.checks.length > 0);
   assert.ok(nonRoot.verify_commands.some((command) => command.includes("kubectl")));
   assert.equal(nonRoot.source_reference, "src/content/docs/quick-wins/non-root-containers.md");
+  assert.equal(defaultDeny.title, "기본 deny NetworkPolicy를 적용한다");
+  assert.equal(defaultDeny.phase, "Efficient");
+  assert.equal(defaultDeny.domain, "네트워크 보안");
+  assert.ok(defaultDeny.checks.length > 0);
+  assert.equal(defaultDeny.source_reference, "src/content/docs/efficient/default-deny-networkpolicy.md");
 });
 
 test("repo scanner reports Quick Wins failures for insecure manifests", async () => {
@@ -400,10 +406,10 @@ test("live scanner reports approved v1.1 Foundational controls from read-only co
   assert.equal(report.findings.length, 10);
   assert.equal(statuses.get("foundational/private-api-endpoint"), "pass");
   assert.equal(statuses.get("foundational/private-subnets"), "pass");
-  assert.equal(statuses.get("foundational/default-deny-networkpolicy"), "pass");
+  assert.equal(statuses.get("efficient/default-deny-networkpolicy"), "pass");
   assert.equal(statuses.get("foundational/pod-실행-권한-최소화"), "pass");
   assert.equal(statuses.get("foundational/iam-k8s-mapping"), "pass");
-  assert.ok(report.findings.every((finding) => finding.phase === "Foundational"));
+  assert.equal(findingByItem(report.findings, "efficient/default-deny-networkpolicy").phase, "Efficient");
   assert.ok(report.findings.every((finding) => finding.priority));
   assert.ok(calls.every((call) => /^(aws (eks|ec2|inspector2) (describe|list|get)|kubectl get)/.test(call)));
 });

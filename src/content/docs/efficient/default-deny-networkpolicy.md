@@ -1,11 +1,13 @@
-# 기본 deny NetworkPolicy를 적용한다
-
-> **Phase:** Foundational (기본 보안)
->
-> **보안 영역:** 네트워크 보안
->
-> **담당:** 공통 (전체 실습)
-
+---
+title: "기본 deny NetworkPolicy를 적용한다"
+description: "Kubernetes는 기본적으로 같은 클러스터 안의 Pod 간 통신을 넓게 허용한다. Namespace가 나뉘어 있어도 NetworkPolicy가 없으면 취약한 Pod에서 다른 서비스, 내부 API, 데이터 저장소로 접근을 시도할 수 있다. 이 상태에서는 웹 Pod 하"
+phase: "Efficient"
+domain: "네트워크 보안"
+difficulty: "미정"
+owner: "공통 (전체 실습)"
+order: 10
+sidebar:
+  order: 10
 ---
 
 ## 왜 필요한가
@@ -299,3 +301,4 @@ kubectl -n team-d describe networkpolicy allow-api-to-db
 - [ ] 임의 테스트 Deployment Pod에서 `api`, `db`, `web` 접근이 차단되는가?
 - [ ] `PolicyEndpoint` 또는 정책 엔진 상태를 통해 리소스 선언이 아닌 실제 집행을 검증했는가?
 - [ ] `team-d`에서 검증 후 모든 워크로드 Namespace로 확장할 계획이 있는가?
+

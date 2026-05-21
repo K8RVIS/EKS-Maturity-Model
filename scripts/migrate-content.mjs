@@ -63,6 +63,7 @@ const slugOverrides = new Map([
   ["네트워크 보안/Foundational/Kubernetes API endpoint를 private-only 전환.md", "private-api-endpoint"],
   ["네트워크 보안/Foundational/Worker node, Pod를 private subnet 배치.md", "private-subnets"],
   ["네트워크 보안/Foundational/기본 deny NetworkPolicy 적용.md", "default-deny-networkpolicy"],
+  ["네트워크 보안/Efficient/기본 deny NetworkPolicy 적용.md", "default-deny-networkpolicy"],
   ["Pod 보안/QuickWins/Container Image 스캔 및 차단.md", "container-image-scanning"],
   ["Pod 보안/QuickWins/Cluster Resource 사용 제한.md", "resource-quota-limitrange"],
 ]);

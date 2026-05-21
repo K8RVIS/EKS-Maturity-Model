@@ -2,9 +2,181 @@
   "generated_from": [
     "src/content/docs/quick-wins",
     "src/content/docs/foundational",
+    "src/content/docs/efficient",
     "src/data/maturity-items.json"
   ],
   "items": [
+    {
+      "item_id": "efficient/alertmanager-및-보안-알림-규칙-추가",
+      "phase": "Efficient",
+      "domain": "Pod 보안",
+      "title": "AlertManager 및 보안 알림 규칙을 추가한다",
+      "difficulty": "★★☆",
+      "href": "/efficient/alertmanager-및-보안-알림-규칙-추가",
+      "checks": [
+        "AlertManager Pod가 `Running` 상태이고 PVC가 `Bound`(gp3-encrypted)인가?",
+        "`eks-security-alerts` PrometheusRule이 등록되어 있는가?",
+        "Prometheus Alerts UI에서 5개 규칙(`HighAPIServer4xxRate`, `HighPodRestartCount`, `TooManyPendingPods`, `HighCPUQuotaUsage`, `HighMemoryQuotaUsage`)이 모두 표시되는가?",
+        "**보안 메트릭 대시보드 구성** 임계값과 PrometheusRule 임계값이 일치하는가?",
+        "AlertManager 수신처(receiver)가 설정되어 알림이 실제 발송되는가?"
+      ],
+      "verify_commands": [
+        "kubectl get pods -n monitoring | grep alertmanager\nkubectl get pvc -n monitoring | grep alertmanager",
+        "kubectl get prometheusrule -n monitoring\nkubectl describe prometheusrule eks-security-alerts -n monitoring",
+        "kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090",
+        "kubectl port-forward -n monitoring svc/kube-prometheus-stack-alertmanager 9093:9093",
+        "curl -s \"http://localhost:9090/api/v1/query?query=sum(kube_pod_status_phase{phase=\\\"Pending\\\"})%20by%20(namespace)\" | python3 -m json.tool\ncurl -s \"http://localhost:9090/api/v1/query?query=kube_resourcequota{resource=\\\"requests.cpu\\\",type=\\\"used\\\"}%20/%20kube_resourcequota{resource=\\\"requests.cpu\\\",type=\\\"hard\\\"}\" | python3 -m json.tool"
+      ],
+      "source_reference": "src/content/docs/efficient/alertmanager-및-보안-알림-규칙-추가.md"
+    },
+    {
+      "item_id": "efficient/cluster-감사-추적-및-event-logging-체계-구축",
+      "phase": "Efficient",
+      "domain": "Pod 보안",
+      "title": "Cluster 감사 추적 및 Event Logging 체계를 구축한다",
+      "difficulty": "★★★",
+      "href": "/efficient/cluster-감사-추적-및-event-logging-체계-구축",
+      "checks": [
+        "EKS 제어 평면 5종 로그(`api`, `audit`, `authenticator`, `controllerManager`, `scheduler`)가 활성화되어 있는가?",
+        "CloudWatch Log Group에 EKS 로그가 수집되고 보존 기간이 설정되어 있는가?",
+        "CloudTrail이 `IsLogging: true` 상태이고 S3에 로그가 저장되는가?",
+        "S3 버킷의 CloudTrail 로그가 KMS 암호화되어 있는가?",
+        "4개 Metric Filter(`unauthorized-api-calls`, `pod-exec`, `secret-access`, `rbac-changes`)가 생성되어 있는가?",
+        "CloudWatch Alarm과 SNS Topic이 연결되어 있는가?",
+        "SNS 이메일 구독이 확인 완료(Confirmed) 상태인가?",
+        "kubectl exec 실행 시 SNS 알림이 수신되는가?"
+      ],
+      "verify_commands": [
+        "AWS_PROFILE=<PROFILE> aws eks describe-cluster \\\n--name <CLUSTER_NAME> \\\n--region ap-northeast-2 \\\n--query 'cluster.logging.clusterLogging[?enabled==`true`]'",
+        "AWS_PROFILE=<PROFILE> aws logs describe-log-groups \\\n--log-group-name-prefix \"/aws/eks/<CLUSTER_NAME>\" \\\n--region ap-northeast-2 \\\n--query 'logGroups[*].{Name:logGroupName,Retention:retentionInDays}'",
+        "AWS_PROFILE=<PROFILE> aws cloudtrail get-trail-status \\\n--name <project_name>-trail \\\n--region ap-northeast-2 \\\n--query '{IsLogging:IsLogging,LatestDelivery:LatestDeliveryTime}'",
+        "AWS_PROFILE=<PROFILE> aws logs describe-metric-filters \\\n--log-group-name \"/aws/eks/<CLUSTER_NAME>/cluster\" \\\n--region ap-northeast-2 \\\n--query 'metricFilters[*].{Name:filterName,Pattern:filterPattern}'",
+        "kubectl exec -it <any-pod> -n team-a -- echo \"test\"\nAWS_PROFILE=<PROFILE> aws logs filter-log-events \\\n--log-group-name \"/aws/eks/<CLUSTER_NAME>/cluster\" \\\n--filter-pattern '{ $.objectRef.subresource = \"exec\" }' \\\n--region ap-northeast-2 \\\n--query 'events[0].message'"
+      ],
+      "source_reference": "src/content/docs/efficient/cluster-감사-추적-및-event-logging-체계-구축.md"
+    },
+    {
+      "item_id": "efficient/security-metric-수집-및-runtime-시각화-구축",
+      "phase": "Efficient",
+      "domain": "Pod 보안",
+      "title": "Security Metric 수집 및 Runtime 시각화를 구축한다",
+      "difficulty": "★★★",
+      "href": "/efficient/security-metric-수집-및-runtime-시각화-구축",
+      "checks": [
+        "`grafana-security-dashboard` ConfigMap이 `grafana_dashboard=1` 레이블로 생성되어 있는가?",
+        "Grafana UI에 보안 대시보드가 자동 등록되어 있는가?",
+        "API Server 4xx 요청률 패널이 데이터를 표시하는가?",
+        "Pod 재시작 횟수 패널이 네임스페이스별로 표시되는가?",
+        "ResourceQuota CPU/Memory 패널의 임계값(70%/90%)이 게이지에 반영되어 있는가?",
+        "Pending Pod 패널이 임계값(1개/3개)에 따라 색상이 변하는가?"
+      ],
+      "verify_commands": [
+        "kubectl get configmap -n monitoring grafana-security-dashboard -o jsonpath='{.metadata.labels}'",
+        "kubectl logs -n monitoring -l app.kubernetes.io/name=grafana -c grafana-sc-dashboard | tail -20",
+        "kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80",
+        "kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090"
+      ],
+      "source_reference": "src/content/docs/efficient/security-metric-수집-및-runtime-시각화-구축.md"
+    },
+    {
+      "item_id": "efficient/coredns와-dns-egress-경로를-내부-dns-경계에-맞게-제한",
+      "phase": "Efficient",
+      "domain": "네트워크 보안",
+      "title": "CoreDNS와 DNS egress 경로를 내부 DNS 경계에 맞게 제한한다",
+      "difficulty": "★★☆",
+      "href": "/efficient/coredns와-dns-egress-경로를-내부-dns-경계에-맞게-제한",
+      "checks": [
+        "CoreDNS가 EKS managed add-on으로 관리되고 `ACTIVE` 상태인가?",
+        "VPC CNI 또는 대체 CNI가 NetworkPolicy를 실제로 집행하는가?",
+        "`team-*` Namespace에 `default-deny-egress`가 적용되어 있는가?",
+        "DNS egress 허용 정책이 `kube-system`의 `k8s-app=kube-dns` Pod, TCP/UDP 53으로만 제한되어 있는가?",
+        "`PolicyEndpoint` 또는 CNI별 endpoint 정책 객체가 생성되는가?",
+        "`kubernetes.default.svc.cluster.local` 질의는 성공하는가?",
+        "`8.8.8.8`, `1.1.1.1` 직접 DNS 질의는 실패하거나 timeout 되는가?",
+        "CoreDNS 로그/메트릭으로 비정상 질의 증가를 확인할 수 있는가?"
+      ],
+      "verify_commands": [
+        "kubectl run dns-public-direct-check \\\n--namespace team-d \\\n--rm \\\n-i \\\n--restart=Never \\\n--image=busybox:1.36 \\\n-- nslookup example.com 8.8.8.8",
+        "짧게 실행되는 `kubectl run --rm ... nslookup` Pod는 NetworkPolicy가 endpoint에 반영되기 전에 질의를 끝낼 수 있다. 더 정확한 검증을 위해 오래 살아있는 테스트 Pod를 만들고, PolicyEndpoint 생성 이후 질의한다."
+      ],
+      "source_reference": "src/content/docs/efficient/coredns와-dns-egress-경로를-내부-dns-경계에-맞게-제한.md"
+    },
+    {
+      "item_id": "efficient/default-deny-networkpolicy",
+      "phase": "Efficient",
+      "domain": "네트워크 보안",
+      "title": "기본 deny NetworkPolicy를 적용한다",
+      "difficulty": "미정",
+      "href": "/efficient/default-deny-networkpolicy",
+      "checks": [
+        "사용 중인 CNI 또는 정책 엔진이 NetworkPolicy를 실제로 집행하는가?",
+        "`team-d` Namespace에 `default-deny-ingress`와 `default-deny-egress`가 적용되어 있는가?",
+        "DNS Egress 허용 정책이 있어 Service 이름 해석이 가능한가?",
+        "`web -> api`, `api -> db`처럼 필요한 통신만 명시적으로 허용되어 있는가?",
+        "임의 테스트 Deployment Pod에서 `api`, `db`, `web` 접근이 차단되는가?",
+        "`PolicyEndpoint` 또는 정책 엔진 상태를 통해 리소스 선언이 아닌 실제 집행을 검증했는가?",
+        "`team-d`에서 검증 후 모든 워크로드 Namespace로 확장할 계획이 있는가?"
+      ],
+      "verify_commands": [
+        "kubectl get networkpolicy -n team-d\nkubectl describe networkpolicy -n team-d",
+        "kubectl get policyendpoints -A\nkubectl -n team-d get policyendpoints",
+        "kubectl -n team-d create deployment netshoot-after --image=nicolaka/netshoot -- sleep 3600\nkubectl -n team-d wait --for=condition=available deployment/netshoot-after --timeout=60s\nPOD=$(kubectl -n team-d get pod -l app=netshoot-after -o jsonpath='{.items[0].metadata.name}')\nkubectl -n team-d exec -it \"$POD\" -- sh",
+        "kubectl -n team-d get pods --show-labels\nkubectl -n team-d describe networkpolicy allow-web-to-api\nkubectl -n team-d describe networkpolicy allow-api-to-db"
+      ],
+      "source_reference": "src/content/docs/efficient/default-deny-networkpolicy.md"
+    },
+    {
+      "item_id": "efficient/kubelet-api-접근-제한",
+      "phase": "Efficient",
+      "domain": "네트워크 보안",
+      "title": "kubelet API 접근을 노드 보안 그룹 경계로 제한한다",
+      "difficulty": "★★☆",
+      "href": "/efficient/kubelet-api-접근-제한",
+      "checks": [
+        "노드 보안 그룹에서 `10250`이 `0.0.0.0/0`, `::/0`, VPC/VPN 전체 CIDR로 열려 있지 않은가?",
+        "kubelet `10250` ingress source가 EKS cluster security group으로 제한되어 있는가?",
+        "kubelet read-only port `10255` ingress 규칙이 없는가?",
+        "노드 전용 보안 그룹이 managed node group Launch Template에 연결되어 있는가?",
+        "노드가 private EKS API endpoint `443`에 정상 접근할 수 있는가?",
+        "`kubectl logs`, `kubectl exec`, `kubectl top nodes`, `kubectl top pods`가 정상 동작하는가?",
+        "Terraform test와 Python 회귀 테스트가 kubelet API 보안 경계를 검증하는가?",
+        "노드 그룹 업데이트 후 상태가 `ACTIVE`이고 health issue가 없는가?"
+      ],
+      "verify_commands": [
+        "aws eks describe-nodegroup \\\n--profile \"${AWS_PROFILE}\" \\\n--region \"${AWS_REGION}\" \\\n--cluster-name \"${CLUSTER_NAME}\" \\\n--nodegroup-name \"${NODEGROUP_NAME}\" \\\n--query 'nodegroup.{status:status,launchTemplate:launchTemplate,health:health.issues}' \\\n--output json",
+        "ASG_NAME=\"$(aws eks describe-nodegroup \\\n--profile \"${AWS_PROFILE}\" \\\n--region \"${AWS_REGION}\" \\\n--cluster-name \"${CLUSTER_NAME}\" \\\n--nodegroup-name \"${NODEGROUP_NAME}\" \\\n--query 'nodegroup.resources.autoScalingGroups[0].name' \\\n--output text)\"\nINSTANCE_IDS=\"$(aws autoscaling describe-auto-scaling-groups \\\n--profile \"${AWS_PROFILE}\" \\\n--region \"${AWS_REGION}\" \\\n--auto-scaling-group-names \"${ASG_NAME}\" \\\n--query 'AutoScalingGroups[0].Instances[].InstanceId' \\\n--output text)\"\naws ec2 describe-instances \\\n--profile \"${AWS_PROFILE}\" \\\n--region \"${AWS_REGION}\" \\\n--instance-ids ${=INSTANCE_IDS} \\\n--query 'Reservations[].Instances[].{InstanceId:InstanceId,SecurityGroups:SecurityGroups}' \\\n--output json",
+        "NODE_SG_IDS=\"$(aws ec2 describe-instances \\\n--profile \"${AWS_PROFILE}\" \\\n--region \"${AWS_REGION}\" \\\n--instance-ids ${=INSTANCE_IDS} \\\n--query 'Reservations[].Instances[].SecurityGroups[].GroupId' \\\n--output text)\"\naws ec2 describe-security-groups \\\n--profile \"${AWS_PROFILE}\" \\\n--region \"${AWS_REGION}\" \\\n--group-ids ${=NODE_SG_IDS} \\\n--query 'SecurityGroups[].{GroupId:GroupId,Ingress:IpPermissions[?FromPort==`10250` || ToPort==`10250` || FromPort==`10255` || ToPort==`10255`]}' \\\n--output json",
+        "aws ec2 describe-security-groups \\\n--profile \"${AWS_PROFILE}\" \\\n--region \"${AWS_REGION}\" \\\n--group-ids ${=NODE_SG_IDS} \\\n--query 'SecurityGroups[].IpPermissions[?FromPort==`10255` || ToPort==`10255`]' \\\n--output json",
+        "`kubectl top`이 실패하면 metrics-server가 kubelet `10250`에 접근하지 못하는 상태일 수 있다. metrics-server 로그와 배포 인자를 확인한다."
+      ],
+      "source_reference": "src/content/docs/efficient/kubelet-api-접근-제한.md"
+    },
+    {
+      "item_id": "efficient/secret-접근-감사",
+      "phase": "Efficient",
+      "domain": "데이터 보호",
+      "title": "Secret 접근을 감사하고 추적한다",
+      "difficulty": "★★☆",
+      "href": "/efficient/secret-접근-감사",
+      "checks": [
+        "EKS control plane log type에 `audit`가 포함되어 있는가?",
+        "EKS control plane log type에 `authenticator`가 포함되어 있는가?",
+        "Control Plane Log Group retention이 운영 보존 정책에 맞게 설정되어 있는가?",
+        "Kubernetes Secret 접근을 조회하는 CloudWatch Logs Insights 쿼리가 준비되어 있는가?",
+        "사람이 직접 Secret을 `get/list/watch`한 이벤트를 식별할 수 있는가?",
+        "Kubernetes username과 IAM ARN을 authenticator 로그로 연결할 수 있는가?",
+        "Secrets Manager `GetSecretValue`와 `BatchGetSecretValue` 이벤트를 CloudTrail에서 확인할 수 있는가?",
+        "예상하지 않은 principal의 Secret 조회에 대한 알림 또는 정기 점검 절차가 있는가?",
+        "로그 조회 권한이 필요한 운영자에게만 제한되어 있는가?",
+        "감사 로그와 알림 메시지에 실제 Secret 값이 포함되지 않도록 관리되는가?"
+      ],
+      "verify_commands": [
+        "aws eks describe-cluster \\\n--name <cluster-name> \\\n--region <region> \\\n--query 'cluster.enabledClusterLogTypes' \\\n--output json",
+        "aws logs describe-log-groups \\\n--region <region> \\\n--log-group-name-prefix \"/aws/eks/<cluster-name>/cluster\" \\\n--query 'logGroups[].{Name:logGroupName,Retention:retentionInDays}' \\\n--output table",
+        "kubectl get secret -n <namespace>\nkubectl get secret app-secrets -n <namespace> -o yaml"
+      ],
+      "source_reference": "src/content/docs/efficient/secret-접근-감사.md"
+    },
     {
       "item_id": "foundational/container-image-취약점-관리",
       "phase": "Foundational",
@@ -66,30 +238,6 @@
         "kubectl get namespaces -l 'pod-security.kubernetes.io/enforce=baseline' \\\n-o custom-columns='NAME:.metadata.name,ENFORCE:.metadata.labels.pod-security\\.kubernetes\\.io/enforce'"
       ],
       "source_reference": "src/content/docs/foundational/pod-실행-권한-최소화.md"
-    },
-    {
-      "item_id": "foundational/default-deny-networkpolicy",
-      "phase": "Foundational",
-      "domain": "네트워크 보안",
-      "title": "기본 deny NetworkPolicy를 적용한다",
-      "difficulty": "미정",
-      "href": "/foundational/default-deny-networkpolicy",
-      "checks": [
-        "사용 중인 CNI 또는 정책 엔진이 NetworkPolicy를 실제로 집행하는가?",
-        "`team-d` Namespace에 `default-deny-ingress`와 `default-deny-egress`가 적용되어 있는가?",
-        "DNS Egress 허용 정책이 있어 Service 이름 해석이 가능한가?",
-        "`web -> api`, `api -> db`처럼 필요한 통신만 명시적으로 허용되어 있는가?",
-        "임의 테스트 Deployment Pod에서 `api`, `db`, `web` 접근이 차단되는가?",
-        "`PolicyEndpoint` 또는 정책 엔진 상태를 통해 리소스 선언이 아닌 실제 집행을 검증했는가?",
-        "`team-d`에서 검증 후 모든 워크로드 Namespace로 확장할 계획이 있는가?"
-      ],
-      "verify_commands": [
-        "kubectl get networkpolicy -n team-d\nkubectl describe networkpolicy -n team-d",
-        "kubectl get policyendpoints -A\nkubectl -n team-d get policyendpoints",
-        "kubectl -n team-d create deployment netshoot-after --image=nicolaka/netshoot -- sleep 3600\nkubectl -n team-d wait --for=condition=available deployment/netshoot-after --timeout=60s\nPOD=$(kubectl -n team-d get pod -l app=netshoot-after -o jsonpath='{.items[0].metadata.name}')\nkubectl -n team-d exec -it \"$POD\" -- sh",
-        "kubectl -n team-d get pods --show-labels\nkubectl -n team-d describe networkpolicy allow-web-to-api\nkubectl -n team-d describe networkpolicy allow-api-to-db"
-      ],
-      "source_reference": "src/content/docs/foundational/default-deny-networkpolicy.md"
     },
     {
       "item_id": "foundational/private-api-endpoint",

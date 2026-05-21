@@ -6,6 +6,7 @@ import yaml from "js-yaml";
 const PHASE_DIRS = [
   ["quick-wins", "Quick Wins"],
   ["foundational", "Foundational"],
+  ["efficient", "Efficient"],
 ];
 
 function readMarkdownFiles(dir) {
@@ -92,7 +93,7 @@ export function buildCatalog({ root = process.cwd() } = {}) {
 
   items.sort((a, b) => a.phase.localeCompare(b.phase) || a.domain.localeCompare(b.domain) || a.item_id.localeCompare(b.item_id));
   return {
-    generated_from: ["src/content/docs/quick-wins", "src/content/docs/foundational", "src/data/maturity-items.json"],
+    generated_from: ["src/content/docs/quick-wins", "src/content/docs/foundational", "src/content/docs/efficient", "src/data/maturity-items.json"],
     items,
   };
 }

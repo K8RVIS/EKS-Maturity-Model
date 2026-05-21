@@ -91,7 +91,7 @@ Automated live checks cover:
 
 - `foundational/private-api-endpoint`
 - `foundational/private-subnets`
-- `foundational/default-deny-networkpolicy`
+- `efficient/default-deny-networkpolicy`
 - `foundational/pod-실행-권한-최소화`
 - `foundational/iam-k8s-mapping`
 - `foundational/container-image-취약점-관리`

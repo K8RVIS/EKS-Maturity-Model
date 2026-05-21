@@ -18,7 +18,7 @@ The scanner performs repo-only static checks for five Quick Wins controls and re
 | --- | --- | --- |
 | `foundational/private-api-endpoint` | EKS API endpoint must have `endpointPublicAccess=false` and `endpointPrivateAccess=true`. | `aws eks describe-cluster` |
 | `foundational/private-subnets` | EKS managed nodegroup subnets must not map public IPs on launch. | `aws eks list-nodegroups`, `aws eks describe-nodegroup`, `aws ec2 describe-subnets` |
-| `foundational/default-deny-networkpolicy` | Each namespace with application pods must have an empty-selector default deny NetworkPolicy. | `kubectl get pods`, `kubectl get networkpolicy` |
+| `efficient/default-deny-networkpolicy` | Each namespace with application pods must have an empty-selector default deny NetworkPolicy. | `kubectl get pods`, `kubectl get networkpolicy` |
 | `foundational/pod-실행-권한-최소화` | Application namespaces must enforce PSS `baseline` or `restricted`, and observed pods must not run privileged containers. | `kubectl get namespaces`, `kubectl get pods` |
 | `foundational/iam-k8s-mapping` | EKS access config should use API-backed authentication and have Access Entries. | `aws eks describe-cluster`, `aws eks list-access-entries` |
 | `foundational/container-image-취약점-관리` | Inspector suppression filters should exist and no active Critical/High ECR findings should remain. | `aws inspector2 list-filters`, `aws inspector2 list-findings` |

@@ -5,9 +5,9 @@ phase: "Foundational"
 domain: "Pod 보안"
 difficulty: "★★☆"
 owner: "공통 (전체 실습)"
-order: 100
+order: 90
 sidebar:
-  order: 100
+  order: 90
 ---
 
 ## 왜 필요한가

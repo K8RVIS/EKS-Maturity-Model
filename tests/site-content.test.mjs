@@ -94,6 +94,7 @@ test("latest source phase and domain moves are reflected without changing stable
   const items = JSON.parse(readFileSync(dataPath, "utf8"));
   const podIam = items.find((item) => item.title === "Pod별 IAM Role 부여를 통해 워크로드별 AWS 권한을 분리한다");
   const nonRoot = items.find((item) => item.title === "컨테이너를 non-root 사용자로 실행하고 루트 파일시스템 쓰기를 제한한다");
+  const defaultDeny = items.find((item) => item.title === "기본 deny NetworkPolicy를 적용한다");
 
   assert.deepEqual(
     {
@@ -124,6 +125,21 @@ test("latest source phase and domain moves are reflected without changing stable
   );
   assert.equal(existsSync(path.join(docsRoot, "quick-wins", "non-root-containers.md")), true);
   assert.equal(existsSync(path.join(docsRoot, "quick-wins", "container-root-권한-실행-제한.md")), false);
+
+  assert.deepEqual(
+    {
+      phase: defaultDeny?.phase,
+      domain: defaultDeny?.domain,
+      href: defaultDeny?.href,
+    },
+    {
+      phase: "Efficient",
+      domain: "네트워크 보안",
+      href: "/efficient/default-deny-networkpolicy",
+    },
+  );
+  assert.equal(existsSync(path.join(docsRoot, "efficient", "default-deny-networkpolicy.md")), true);
+  assert.equal(existsSync(path.join(docsRoot, "foundational", "default-deny-networkpolicy.md")), false);
 });
 
 test("GitHub Pages and design integration files are present", () => {
