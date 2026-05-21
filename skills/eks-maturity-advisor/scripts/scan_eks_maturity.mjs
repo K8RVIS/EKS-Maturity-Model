@@ -120,8 +120,8 @@ function checkNonRoot(entries) {
       "quick-wins/non-root-containers",
       "unknown",
       "medium",
-      ["No Kubernetes workload manifests were found."],
-      "Deployment, StatefulSet, DaemonSet, Job, CronJob, or Pod manifests are required for static non-root assessment.",
+      ["Kubernetes 워크로드 매니페스트를 찾지 못했습니다."],
+      "정적 non-root 진단을 위해 Deployment, StatefulSet, DaemonSet, Job, CronJob 또는 Pod 매니페스트를 추가하세요.",
     );
   }
 
@@ -134,7 +134,7 @@ function checkNonRoot(entries) {
       const runAsNonRoot = context.runAsNonRoot ?? podContext.runAsNonRoot;
 
       if (runAsUser === 0 || runAsNonRoot !== true) {
-        failures.push(`${file}: ${doc.kind}/${doc.metadata?.name ?? "<unnamed>"} container ${container.name ?? "<unnamed>"} lacks runAsNonRoot=true or uses UID 0`);
+        failures.push(`${file}: ${doc.kind}/${doc.metadata?.name ?? "<unnamed>"}의 컨테이너 ${container.name ?? "<unnamed>"}가 runAsNonRoot=true를 설정하지 않았거나 UID 0으로 실행됩니다.`);
       }
     }
   }
@@ -143,8 +143,8 @@ function checkNonRoot(entries) {
     "quick-wins/non-root-containers",
     failures.length > 0 ? "fail" : "pass",
     failures.length > 0 ? "high" : "low",
-    failures.length > 0 ? failures : [`${workloads.length} workload manifest(s) declare non-root execution.`],
-    "Set pod/container securityContext.runAsNonRoot=true, use a non-zero runAsUser, and add container-level hardening such as readOnlyRootFilesystem where possible.",
+    failures.length > 0 ? failures : [`${workloads.length}개 워크로드 매니페스트가 non-root 실행을 선언합니다.`],
+    "Pod 또는 컨테이너 securityContext에 runAsNonRoot=true와 0이 아닌 runAsUser를 설정하고, 가능하면 readOnlyRootFilesystem 같은 컨테이너 강화 설정을 추가하세요.",
     ["kubectl get deploy,statefulset,daemonset -A -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}{\"\\t\"}{.spec.template.spec.securityContext}{\"\\n\"}{end}'"],
   );
 }
@@ -155,7 +155,7 @@ function checkServiceAccounts(entries) {
     .filter((entry) => entry.podSpec);
 
   if (workloads.length === 0) {
-    return finding("quick-wins/default-service-account", "unknown", "medium", ["No Kubernetes workload manifests were found."], "Add workload manifests before assessing ServiceAccount usage.");
+    return finding("quick-wins/default-service-account", "unknown", "medium", ["Kubernetes 워크로드 매니페스트를 찾지 못했습니다."], "ServiceAccount 사용 여부를 평가하려면 먼저 워크로드 매니페스트를 추가하세요.");
   }
 
   const failures = [];
@@ -163,7 +163,7 @@ function checkServiceAccounts(entries) {
     const serviceAccountName = podSpec.serviceAccountName ?? "default";
     const automount = podSpec.automountServiceAccountToken;
     if (serviceAccountName === "default" || automount !== false) {
-      failures.push(`${file}: ${doc.kind}/${doc.metadata?.name ?? "<unnamed>"} uses ${serviceAccountName} with automountServiceAccountToken=${String(automount)}`);
+      failures.push(`${file}: ${doc.kind}/${doc.metadata?.name ?? "<unnamed>"}가 ServiceAccount ${serviceAccountName}를 사용하며 automountServiceAccountToken=${String(automount)}입니다.`);
     }
   }
 
@@ -171,8 +171,8 @@ function checkServiceAccounts(entries) {
     "quick-wins/default-service-account",
     failures.length > 0 ? "fail" : "pass",
     failures.length > 0 ? "high" : "low",
-    failures.length > 0 ? failures : [`${workloads.length} workload manifest(s) avoid default ServiceAccount token mounting.`],
-    "Use workload-specific ServiceAccounts and set automountServiceAccountToken=false unless the workload needs Kubernetes API access.",
+    failures.length > 0 ? failures : [`${workloads.length}개 워크로드 매니페스트가 default ServiceAccount 토큰 자동 마운트를 피하고 있습니다.`],
+    "워크로드별 ServiceAccount를 사용하고, Kubernetes API 접근이 필요한 경우가 아니라면 automountServiceAccountToken=false를 설정하세요.",
     ["kubectl get deploy,statefulset,daemonset -A -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}{\"\\t\"}{.spec.template.spec.serviceAccountName}{\"\\t\"}{.spec.template.spec.automountServiceAccountToken}{\"\\n\"}{end}'"],
   );
 }
@@ -187,19 +187,19 @@ function ingressHasTls(doc) {
 function checkIngressTls(entries) {
   const ingresses = entries.filter(({ doc }) => doc.kind === "Ingress");
   if (ingresses.length === 0) {
-    return finding("quick-wins/ingress-load-balancer-tls", "unknown", "medium", ["No Ingress manifests were found."], "Assess TLS once Ingress or Load Balancer manifests exist.");
+    return finding("quick-wins/ingress-load-balancer-tls", "unknown", "medium", ["Ingress 매니페스트를 찾지 못했습니다."], "Ingress 또는 Load Balancer 매니페스트가 생긴 뒤 TLS 설정을 평가하세요.");
   }
 
   const failures = ingresses
     .filter(({ doc }) => !ingressHasTls(doc))
-    .map(({ file, doc }) => `${file}: Ingress/${doc.metadata?.name ?? "<unnamed>"} lacks spec.tls or ALB HTTPS certificate annotations`);
+    .map(({ file, doc }) => `${file}: Ingress/${doc.metadata?.name ?? "<unnamed>"}에 spec.tls 또는 ALB HTTPS 인증서 annotation이 없습니다.`);
 
   return finding(
     "quick-wins/ingress-load-balancer-tls",
     failures.length > 0 ? "fail" : "pass",
     failures.length > 0 ? "high" : "low",
-    failures.length > 0 ? failures : [`${ingresses.length} Ingress manifest(s) declare TLS termination.`],
-    "Declare spec.tls for Kubernetes Ingress or configure AWS Load Balancer Controller HTTPS listener, ACM certificate ARN, and SSL redirect annotations.",
+    failures.length > 0 ? failures : [`${ingresses.length}개 Ingress 매니페스트가 TLS termination을 선언합니다.`],
+    "Kubernetes Ingress에는 spec.tls를 선언하고, AWS Load Balancer Controller를 쓰는 경우 HTTPS listener, ACM certificate ARN, SSL redirect annotation을 설정하세요.",
     ["kubectl get ingress -A -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}{\"\\t\"}{.spec.tls}{\"\\t\"}{.metadata.annotations}{\"\\n\"}{end}'"],
   );
 }
@@ -214,22 +214,22 @@ function checkQuotaAndLimits(entries) {
   const limitNamespaces = new Set(entries.filter(({ doc }) => doc.kind === "LimitRange").map(({ doc }) => namespaceOf(doc)));
 
   if (workloadNamespaces.size === 0) {
-    return finding("quick-wins/resource-quota-limitrange", "unknown", "medium", ["No workload namespaces were found."], "Add workload manifests before assessing namespace quota and default limits.");
+    return finding("quick-wins/resource-quota-limitrange", "unknown", "medium", ["워크로드 네임스페이스를 찾지 못했습니다."], "네임스페이스 quota와 기본 limit을 평가하려면 먼저 워크로드 매니페스트를 추가하세요.");
   }
 
   const failures = [...workloadNamespaces].flatMap((namespace) => {
     const missing = [];
     if (!quotaNamespaces.has(namespace)) missing.push("ResourceQuota");
     if (!limitNamespaces.has(namespace)) missing.push("LimitRange");
-    return missing.length > 0 ? [`namespace ${namespace} is missing ${missing.join(" and ")}`] : [];
+    return missing.length > 0 ? [`네임스페이스 ${namespace}에 ${missing.join(" 및 ")}가 없습니다.`] : [];
   });
 
   return finding(
     "quick-wins/resource-quota-limitrange",
     failures.length > 0 ? "fail" : "pass",
     failures.length > 0 ? "medium" : "low",
-    failures.length > 0 ? failures : [`${workloadNamespaces.size} namespace(s) include ResourceQuota and LimitRange.`],
-    "Define ResourceQuota and LimitRange for every application namespace so workloads have bounded requests and limits.",
+    failures.length > 0 ? failures : [`${workloadNamespaces.size}개 네임스페이스에 ResourceQuota와 LimitRange가 있습니다.`],
+    "모든 애플리케이션 네임스페이스에 ResourceQuota와 LimitRange를 정의해 워크로드 request/limit이 경계 안에서 관리되도록 하세요.",
     ["kubectl get resourcequota,limitrange -A"],
   );
 }
@@ -248,14 +248,14 @@ function hasHardcodedSecret(obj) {
 function checkHardcodedSecrets(entries) {
   const failures = entries
     .filter(({ doc }) => hasHardcodedSecret(doc))
-    .map(({ file, doc }) => `${file}: ${doc.kind ?? "Document"}/${doc.metadata?.name ?? "<unnamed>"} contains an env-style secret value`);
+    .map(({ file, doc }) => `${file}: ${doc.kind ?? "Document"}/${doc.metadata?.name ?? "<unnamed>"}에 env 형식의 Secret literal 값이 포함되어 있습니다.`);
 
   return finding(
     "quick-wins/aws-secret-manager-사용",
     failures.length > 0 ? "fail" : "pass",
     failures.length > 0 ? "high" : "low",
-    failures.length > 0 ? failures : ["No env[].value entries with secret-like names were found."],
-    "Move literal secret values to AWS Secrets Manager or another external secret store, then reference them through ESO, CSI, or application runtime lookup.",
+    failures.length > 0 ? failures : ["Secret처럼 보이는 이름의 env[].value literal 항목을 찾지 못했습니다."],
+    "literal Secret 값은 AWS Secrets Manager 또는 승인된 외부 Secret 저장소로 옮기고, ESO, CSI, 애플리케이션 런타임 조회 방식으로 참조하세요.",
     ["kubectl get deploy,statefulset,daemonset -A -o yaml | grep -Ei 'password|secret|token|api[_-]?key'"],
   );
 }
@@ -302,14 +302,14 @@ function missingLiveConfig(itemId, missing, verifyCommands) {
     itemId,
     "unknown",
     "medium",
-    [`Missing live scan input: ${missing.join(", ")}.`],
-    "Provide the missing live scan input and rerun the read-only scanner.",
+    [`live scan 입력값이 부족합니다: ${missing.join(", ")}.`],
+    "부족한 live scan 입력값을 제공한 뒤 read-only scanner를 다시 실행하세요.",
     verifyCommands,
   );
 }
 
 function commandUnknown(itemId, error, recommendation, verifyCommands) {
-  return finding(itemId, "unknown", "medium", [`Read-only command failed: ${error}`], recommendation, verifyCommands);
+  return finding(itemId, "unknown", "medium", [`read-only 명령 실행에 실패했습니다: ${error}`], recommendation, verifyCommands);
 }
 
 function applicationNamespacesFromPods(pods) {
@@ -379,7 +379,7 @@ function checkLivePrivateApiEndpoint(options) {
     awsArgs("eks", "describe-cluster", ["--name", options.clusterName], options),
   );
   if (!result.ok) {
-    return commandUnknown("foundational/private-api-endpoint", result.error, "Run the EKS cluster endpoint query with read-only AWS credentials.", verifyCommands);
+    return commandUnknown("foundational/private-api-endpoint", result.error, "read-only AWS 자격 증명으로 EKS cluster endpoint 조회를 실행하세요.", verifyCommands);
   }
 
   const config = result.data.cluster?.resourcesVpcConfig ?? {};
@@ -389,7 +389,7 @@ function checkLivePrivateApiEndpoint(options) {
     passes ? "pass" : "fail",
     passes ? "low" : "high",
     [`endpointPublicAccess=${String(config.endpointPublicAccess)}, endpointPrivateAccess=${String(config.endpointPrivateAccess)}`],
-    "Use a private-only EKS API endpoint for production clusters and require access through approved private network paths.",
+    "운영 클러스터는 private-only EKS API endpoint를 사용하고, 승인된 private 네트워크 경로를 통해서만 접근하도록 구성하세요.",
     verifyCommands,
   );
 }
@@ -411,7 +411,7 @@ function checkLivePrivateSubnets(options) {
     awsArgs("eks", "list-nodegroups", ["--cluster-name", options.clusterName], options),
   );
   if (!nodegroups.ok) {
-    return commandUnknown("foundational/private-subnets", nodegroups.error, "List EKS managed nodegroups with read-only AWS credentials.", verifyCommands);
+    return commandUnknown("foundational/private-subnets", nodegroups.error, "read-only AWS 자격 증명으로 EKS managed nodegroup 목록을 조회하세요.", verifyCommands);
   }
 
   const subnetIds = new Set();
@@ -422,13 +422,13 @@ function checkLivePrivateSubnets(options) {
       awsArgs("eks", "describe-nodegroup", ["--cluster-name", options.clusterName, "--nodegroup-name", nodegroupName], options),
     );
     if (!nodegroup.ok) {
-      return commandUnknown("foundational/private-subnets", nodegroup.error, `Describe nodegroup ${nodegroupName} with read-only AWS credentials.`, verifyCommands);
+      return commandUnknown("foundational/private-subnets", nodegroup.error, `read-only AWS 자격 증명으로 nodegroup ${nodegroupName} 상세 정보를 조회하세요.`, verifyCommands);
     }
     for (const subnetId of nodegroup.data.nodegroup?.subnets ?? []) subnetIds.add(subnetId);
   }
 
   if (subnetIds.size === 0) {
-    return finding("foundational/private-subnets", "unknown", "medium", ["No EKS managed nodegroup subnets were returned."], "Confirm node placement from self-managed nodegroups, Fargate profiles, or Terraform outputs.", verifyCommands);
+    return finding("foundational/private-subnets", "unknown", "medium", ["EKS managed nodegroup subnet 정보가 반환되지 않았습니다."], "self-managed nodegroup, Fargate profile 또는 Terraform output에서 node 배치 정보를 확인하세요.", verifyCommands);
   }
 
   const subnets = readJson(
@@ -437,7 +437,7 @@ function checkLivePrivateSubnets(options) {
     awsArgs("ec2", "describe-subnets", ["--subnet-ids", ...subnetIds], options),
   );
   if (!subnets.ok) {
-    return commandUnknown("foundational/private-subnets", subnets.error, "Describe nodegroup subnets with read-only EC2 permissions.", verifyCommands);
+    return commandUnknown("foundational/private-subnets", subnets.error, "read-only EC2 권한으로 nodegroup subnet 상세 정보를 조회하세요.", verifyCommands);
   }
 
   const publicSubnets = (subnets.data.Subnets ?? []).filter((subnet) => subnet.MapPublicIpOnLaunch === true);
@@ -446,9 +446,9 @@ function checkLivePrivateSubnets(options) {
     publicSubnets.length > 0 ? "fail" : "pass",
     publicSubnets.length > 0 ? "high" : "low",
     publicSubnets.length > 0
-      ? publicSubnets.map((subnet) => `${subnet.SubnetId} maps public IPs on launch`)
-      : [`${subnetIds.size} nodegroup subnet(s) do not map public IPs on launch.`],
-    "Place worker nodes and pod networking in private subnets; use controlled egress paths instead of public subnet placement.",
+      ? publicSubnets.map((subnet) => `${subnet.SubnetId}가 인스턴스 시작 시 public IP를 자동 할당합니다.`)
+      : [`${subnetIds.size}개 nodegroup subnet이 인스턴스 시작 시 public IP를 자동 할당하지 않습니다.`],
+    "Worker node와 Pod 네트워킹은 private subnet에 배치하고, public subnet 배치 대신 통제된 egress 경로를 사용하세요.",
     verifyCommands,
   );
 }
@@ -459,17 +459,17 @@ function checkLiveDefaultDenyNetworkPolicy(options) {
 
   const pods = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "pods", "-A", "-o", "json"], options));
   if (!pods.ok) {
-    return commandUnknown("foundational/default-deny-networkpolicy", pods.error, "Read pods with kubectl using the selected context.", verifyCommands);
+    return commandUnknown("foundational/default-deny-networkpolicy", pods.error, "선택한 context로 kubectl을 사용해 Pod 목록을 조회하세요.", verifyCommands);
   }
 
   const workloadNamespaces = applicationNamespacesFromPods(pods.data);
   if (workloadNamespaces.size === 0) {
-    return finding("foundational/default-deny-networkpolicy", "unknown", "medium", ["No application workload namespaces were found."], "Run the check after workloads exist or provide namespace scope explicitly.", verifyCommands);
+    return finding("foundational/default-deny-networkpolicy", "unknown", "medium", ["애플리케이션 워크로드 네임스페이스를 찾지 못했습니다."], "워크로드가 생성된 뒤 다시 점검하거나 네임스페이스 범위를 명시적으로 제공하세요.", verifyCommands);
   }
 
   const policies = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "networkpolicy", "-A", "-o", "json"], options));
   if (!policies.ok) {
-    return commandUnknown("foundational/default-deny-networkpolicy", policies.error, "Read NetworkPolicy objects with kubectl using the selected context.", verifyCommands);
+    return commandUnknown("foundational/default-deny-networkpolicy", policies.error, "선택한 context로 kubectl을 사용해 NetworkPolicy 객체를 조회하세요.", verifyCommands);
   }
 
   const protectedNamespaces = new Set(
@@ -483,8 +483,8 @@ function checkLiveDefaultDenyNetworkPolicy(options) {
     "foundational/default-deny-networkpolicy",
     missing.length > 0 ? "fail" : "pass",
     missing.length > 0 ? "high" : "low",
-    missing.length > 0 ? missing.map((namespace) => `namespace ${namespace} lacks a default deny NetworkPolicy`) : [`${workloadNamespaces.size} workload namespace(s) have default deny NetworkPolicy coverage.`],
-    "Apply namespace-level default deny NetworkPolicy before adding explicit workload allow rules.",
+    missing.length > 0 ? missing.map((namespace) => `네임스페이스 ${namespace}에 default deny NetworkPolicy가 없습니다.`) : [`${workloadNamespaces.size}개 워크로드 네임스페이스에 default deny NetworkPolicy가 적용되어 있습니다.`],
+    "명시적인 워크로드 허용 정책을 추가하기 전에 네임스페이스 수준 default deny NetworkPolicy를 적용하세요.",
     verifyCommands,
   );
 }
@@ -498,17 +498,17 @@ function checkLivePodSecurityBaseline(options) {
 
   const namespaces = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "namespaces", "-o", "json"], options));
   if (!namespaces.ok) {
-    return commandUnknown("foundational/pod-실행-권한-최소화", namespaces.error, "Read namespace labels with kubectl using the selected context.", verifyCommands);
+    return commandUnknown("foundational/pod-실행-권한-최소화", namespaces.error, "선택한 context로 kubectl을 사용해 namespace label을 조회하세요.", verifyCommands);
   }
 
   const pods = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "pods", "-A", "-o", "json"], options));
   if (!pods.ok) {
-    return commandUnknown("foundational/pod-실행-권한-최소화", pods.error, "Read pod specs with kubectl using the selected context.", verifyCommands);
+    return commandUnknown("foundational/pod-실행-권한-최소화", pods.error, "선택한 context로 kubectl을 사용해 Pod spec을 조회하세요.", verifyCommands);
   }
 
   const workloadNamespaces = applicationNamespacesFromPods(pods.data);
   if (workloadNamespaces.size === 0) {
-    return finding("foundational/pod-실행-권한-최소화", "unknown", "medium", ["No application workload namespaces were found."], "Run the check after workloads exist or provide namespace scope explicitly.", verifyCommands);
+    return finding("foundational/pod-실행-권한-최소화", "unknown", "medium", ["애플리케이션 워크로드 네임스페이스를 찾지 못했습니다."], "워크로드가 생성된 뒤 다시 점검하거나 네임스페이스 범위를 명시적으로 제공하세요.", verifyCommands);
   }
 
   const labelsByNamespace = new Map((namespaces.data.items ?? []).map((namespace) => [namespace.metadata?.name, namespace.metadata?.labels ?? {}]));
@@ -516,7 +516,7 @@ function checkLivePodSecurityBaseline(options) {
   for (const namespace of workloadNamespaces) {
     const enforce = labelsByNamespace.get(namespace)?.["pod-security.kubernetes.io/enforce"];
     if (enforce !== "baseline" && enforce !== "restricted") {
-      failures.push(`namespace ${namespace} does not enforce PSS baseline or restricted`);
+      failures.push(`네임스페이스 ${namespace}가 PSS baseline 또는 restricted를 enforce하지 않습니다.`);
     }
   }
 
@@ -525,7 +525,7 @@ function checkLivePodSecurityBaseline(options) {
     if (!workloadNamespaces.has(namespace)) continue;
     for (const container of liveContainersForPod(pod)) {
       if (container.securityContext?.privileged === true) {
-        failures.push(`${namespace}/${pod.metadata?.name ?? "<unnamed>"} container ${container.name ?? "<unnamed>"} is privileged`);
+        failures.push(`${namespace}/${pod.metadata?.name ?? "<unnamed>"}의 컨테이너 ${container.name ?? "<unnamed>"}가 privileged로 실행됩니다.`);
       }
     }
   }
@@ -534,8 +534,8 @@ function checkLivePodSecurityBaseline(options) {
     "foundational/pod-실행-권한-최소화",
     failures.length > 0 ? "fail" : "pass",
     failures.length > 0 ? "high" : "low",
-    failures.length > 0 ? failures : [`${workloadNamespaces.size} workload namespace(s) enforce PSS baseline/restricted and no privileged containers were observed.`],
-    "Enforce Pod Security Standards at least at baseline and remove privileged container execution from application namespaces.",
+    failures.length > 0 ? failures : [`${workloadNamespaces.size}개 워크로드 네임스페이스가 PSS baseline/restricted를 enforce하며 privileged 컨테이너가 관측되지 않았습니다.`],
+    "Pod Security Standards를 최소 baseline 이상으로 enforce하고 애플리케이션 네임스페이스에서 privileged 컨테이너 실행을 제거하세요.",
     verifyCommands,
   );
 }
@@ -556,7 +556,7 @@ function checkLiveIamK8sMapping(options) {
     awsArgs("eks", "describe-cluster", ["--name", options.clusterName], options),
   );
   if (!cluster.ok) {
-    return commandUnknown("foundational/iam-k8s-mapping", cluster.error, "Read EKS access configuration with read-only AWS credentials.", verifyCommands);
+    return commandUnknown("foundational/iam-k8s-mapping", cluster.error, "read-only AWS 자격 증명으로 EKS access configuration을 조회하세요.", verifyCommands);
   }
 
   const entries = readJson(
@@ -565,7 +565,7 @@ function checkLiveIamK8sMapping(options) {
     awsArgs("eks", "list-access-entries", ["--cluster-name", options.clusterName], options),
   );
   if (!entries.ok) {
-    return commandUnknown("foundational/iam-k8s-mapping", entries.error, "List EKS access entries with read-only AWS credentials.", verifyCommands);
+    return commandUnknown("foundational/iam-k8s-mapping", entries.error, "read-only AWS 자격 증명으로 EKS access entry 목록을 조회하세요.", verifyCommands);
   }
 
   const authenticationMode = cluster.data.cluster?.accessConfig?.authenticationMode ?? "unknown";
@@ -579,7 +579,7 @@ function checkLiveIamK8sMapping(options) {
     status,
     passes ? "low" : usesApi ? "medium" : "high",
     [`authenticationMode=${authenticationMode}, accessEntries=${accessEntries.length}`],
-    "Manage cluster access with EKS Access Entries and keep IAM-to-Kubernetes access mappings explicit and reviewable.",
+    "클러스터 접근은 EKS Access Entries로 관리하고 IAM-to-Kubernetes 접근 매핑을 명시적이고 리뷰 가능한 상태로 유지하세요.",
     verifyCommands,
   );
 }
@@ -593,7 +593,7 @@ function checkLiveContainerImageTriage(options) {
 
   const filters = readJson(options.commandRunner, "aws", awsArgs("inspector2", "list-filters", ["--action", "SUPPRESS"], options));
   if (!filters.ok) {
-    return commandUnknown("foundational/container-image-취약점-관리", filters.error, "List Inspector suppression filters with read-only AWS credentials.", verifyCommands);
+    return commandUnknown("foundational/container-image-취약점-관리", filters.error, "read-only AWS 자격 증명으로 Inspector suppression filter 목록을 조회하세요.", verifyCommands);
   }
 
   const findings = readJson(
@@ -605,7 +605,7 @@ function checkLiveContainerImageTriage(options) {
     ], options),
   );
   if (!findings.ok) {
-    return commandUnknown("foundational/container-image-취약점-관리", findings.error, "List active Critical/High ECR Inspector findings with read-only AWS credentials.", verifyCommands);
+    return commandUnknown("foundational/container-image-취약점-관리", findings.error, "read-only AWS 자격 증명으로 활성 Critical/High ECR Inspector finding을 조회하세요.", verifyCommands);
   }
 
   const suppressFilters = filters.data.filters ?? [];
@@ -616,10 +616,10 @@ function checkLiveContainerImageTriage(options) {
     status,
     activeFindings.length > 0 ? "high" : status === "warn" ? "medium" : "low",
     [
-      `${suppressFilters.length} Inspector suppression filter(s) found.`,
-      `${activeFindings.length} active Critical/High ECR finding(s) found.`,
+      `${suppressFilters.length}개 Inspector suppression filter를 찾았습니다.`,
+      `${activeFindings.length}개 활성 Critical/High ECR finding을 찾았습니다.`,
     ],
-    "Maintain documented Inspector triage suppression filters and remediate active Critical/High ECR findings within the agreed SLA.",
+    "문서화된 Inspector triage suppression filter를 유지하고 활성 Critical/High ECR finding은 합의된 SLA 안에 조치하세요.",
     verifyCommands,
   );
 }
@@ -633,29 +633,29 @@ function checkLiveGrafana(options) {
   if (!options.context) return missingLiveConfig("foundational/grafana-대시보드-연결", ["context"], verifyCommands);
 
   const pods = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "pods", "-n", "monitoring", "-l", "app.kubernetes.io/name=grafana", "-o", "json"], options));
-  if (!pods.ok) return commandUnknown("foundational/grafana-대시보드-연결", pods.error, "Read Grafana pods from the monitoring namespace.", verifyCommands);
+  if (!pods.ok) return commandUnknown("foundational/grafana-대시보드-연결", pods.error, "monitoring 네임스페이스의 Grafana Pod를 조회하세요.", verifyCommands);
 
   const pvcs = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "pvc", "-n", "monitoring", "-o", "json"], options));
-  if (!pvcs.ok) return commandUnknown("foundational/grafana-대시보드-연결", pvcs.error, "Read Grafana PVCs from the monitoring namespace.", verifyCommands);
+  if (!pvcs.ok) return commandUnknown("foundational/grafana-대시보드-연결", pvcs.error, "monitoring 네임스페이스의 Grafana PVC를 조회하세요.", verifyCommands);
 
   const ingresses = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "ingress", "-n", "monitoring", "-o", "json"], options));
-  if (!ingresses.ok) return commandUnknown("foundational/grafana-대시보드-연결", ingresses.error, "Read Grafana ingress from the monitoring namespace.", verifyCommands);
+  if (!ingresses.ok) return commandUnknown("foundational/grafana-대시보드-연결", ingresses.error, "monitoring 네임스페이스의 Grafana Ingress를 조회하세요.", verifyCommands);
 
   const runningPods = (pods.data.items ?? []).filter((pod) => pod.status?.phase === "Running");
   const grafanaPvcs = (pvcs.data.items ?? []).filter((pvc) => /grafana/i.test(pvc.metadata?.name ?? ""));
   const boundPvcs = grafanaPvcs.filter((pvc) => pvc.status?.phase === "Bound");
   const hasIngress = (ingresses.data.items ?? []).length > 0;
   const failures = [];
-  if (runningPods.length === 0) failures.push("No Running Grafana pod was found in namespace monitoring.");
-  if (grafanaPvcs.length > 0 && boundPvcs.length !== grafanaPvcs.length) failures.push("One or more Grafana PVCs are not Bound.");
-  if (!hasIngress) failures.push("No Grafana ingress was found in namespace monitoring.");
+  if (runningPods.length === 0) failures.push("monitoring 네임스페이스에서 Running 상태의 Grafana Pod를 찾지 못했습니다.");
+  if (grafanaPvcs.length > 0 && boundPvcs.length !== grafanaPvcs.length) failures.push("Grafana PVC 중 하나 이상이 Bound 상태가 아닙니다.");
+  if (!hasIngress) failures.push("monitoring 네임스페이스에서 Grafana Ingress를 찾지 못했습니다.");
 
   return finding(
     "foundational/grafana-대시보드-연결",
     failures.length > 0 ? "warn" : "pass",
     failures.length > 0 ? "medium" : "low",
-    failures.length > 0 ? failures : [`${runningPods.length} Grafana pod(s) Running, ${boundPvcs.length} Grafana PVC(s) Bound, and ingress exists.`],
-    "Keep Grafana running with persistent encrypted storage and an explicitly reviewed access path.",
+    failures.length > 0 ? failures : [`${runningPods.length}개 Grafana Pod가 Running이고, ${boundPvcs.length}개 Grafana PVC가 Bound이며, Ingress가 존재합니다.`],
+    "Grafana를 지속적인 암호화 스토리지와 명시적으로 검토된 접근 경로로 운영하세요.",
     verifyCommands,
   );
 }
@@ -679,25 +679,25 @@ function checkLiveEbsStorageProtection(options) {
   if (missing.length > 0) return missingLiveConfig("foundational/ebs-기반-workload-storage-data-보호", missing, verifyCommands);
 
   const defaultEncryption = readJson(options.commandRunner, "aws", awsArgs("ec2", "get-ebs-encryption-by-default", [], options));
-  if (!defaultEncryption.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", defaultEncryption.error, "Read EBS default encryption state with read-only AWS credentials.", verifyCommands);
+  if (!defaultEncryption.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", defaultEncryption.error, "read-only AWS 자격 증명으로 EBS 기본 암호화 상태를 조회하세요.", verifyCommands);
 
   const storageClasses = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "storageclass", "-o", "json"], options));
-  if (!storageClasses.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", storageClasses.error, "Read StorageClass objects with kubectl.", verifyCommands);
+  if (!storageClasses.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", storageClasses.error, "kubectl로 StorageClass 객체를 조회하세요.", verifyCommands);
 
   const pvcs = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "pvc", "-A", "-o", "json"], options));
-  if (!pvcs.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", pvcs.error, "Read PVC objects with kubectl.", verifyCommands);
+  if (!pvcs.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", pvcs.error, "kubectl로 PVC 객체를 조회하세요.", verifyCommands);
 
   const pvs = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "pv", "-o", "json"], options));
-  if (!pvs.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", pvs.error, "Read PV objects with kubectl.", verifyCommands);
+  if (!pvs.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", pvs.error, "kubectl로 PV 객체를 조회하세요.", verifyCommands);
 
   const failures = [];
-  if (defaultEncryption.data.EbsEncryptionByDefault !== true) failures.push("AWS EBS encryption by default is not enabled in this region.");
+  if (defaultEncryption.data.EbsEncryptionByDefault !== true) failures.push("이 리전에서 AWS EBS 기본 암호화가 활성화되어 있지 않습니다.");
 
   const classByName = new Map((storageClasses.data.items ?? []).map((storageClass) => [storageClass.metadata?.name, storageClass]));
   for (const storageClass of storageClasses.data.items ?? []) {
     if (storageClass.provisioner === "ebs.csi.aws.com" || storageClass.provisioner === "kubernetes.io/aws-ebs") {
       if (String(storageClass.parameters?.encrypted).toLowerCase() !== "true") {
-        failures.push(`StorageClass ${storageClass.metadata?.name ?? "<unnamed>"} does not set parameters.encrypted=true`);
+        failures.push(`StorageClass ${storageClass.metadata?.name ?? "<unnamed>"}가 parameters.encrypted=true를 설정하지 않았습니다.`);
       }
     }
   }
@@ -705,7 +705,7 @@ function checkLiveEbsStorageProtection(options) {
   for (const pvc of pvcs.data.items ?? []) {
     const storageClassName = pvc.spec?.storageClassName;
     if (!storageClassName || !classByName.has(storageClassName)) {
-      failures.push(`${pvc.metadata?.namespace ?? "default"}/${pvc.metadata?.name ?? "<unnamed>"} does not reference a known encrypted StorageClass`);
+      failures.push(`${pvc.metadata?.namespace ?? "default"}/${pvc.metadata?.name ?? "<unnamed>"} PVC가 확인된 암호화 StorageClass를 참조하지 않습니다.`);
     }
   }
 
@@ -714,9 +714,9 @@ function checkLiveEbsStorageProtection(options) {
     .filter(Boolean);
   if (volumeIds.length > 0) {
     const volumes = readJson(options.commandRunner, "aws", awsArgs("ec2", "describe-volumes", ["--volume-ids", ...volumeIds], options));
-    if (!volumes.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", volumes.error, "Describe backing EBS volumes with read-only AWS credentials.", verifyCommands);
+    if (!volumes.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", volumes.error, "read-only AWS 자격 증명으로 backing EBS volume을 조회하세요.", verifyCommands);
     for (const volume of volumes.data.Volumes ?? []) {
-      if (volume.Encrypted !== true) failures.push(`EBS volume ${volume.VolumeId} is not encrypted`);
+      if (volume.Encrypted !== true) failures.push(`EBS volume ${volume.VolumeId}가 암호화되어 있지 않습니다.`);
     }
   }
 
@@ -724,8 +724,8 @@ function checkLiveEbsStorageProtection(options) {
     "foundational/ebs-기반-workload-storage-data-보호",
     failures.length > 0 ? "fail" : "pass",
     failures.length > 0 ? "high" : "low",
-    failures.length > 0 ? failures : ["EBS default encryption, StorageClass encryption, PVC references, and observed EBS PV volumes are encrypted."],
-    "Enable EBS encryption by default, require encrypted EBS CSI StorageClasses, and migrate any unencrypted PV-backed workloads.",
+    failures.length > 0 ? failures : ["EBS 기본 암호화, StorageClass 암호화, PVC 참조, 관측된 EBS PV volume 암호화가 모두 확인되었습니다."],
+    "EBS 기본 암호화를 활성화하고, 암호화된 EBS CSI StorageClass를 요구하며, 암호화되지 않은 PV 기반 워크로드는 마이그레이션하세요.",
     verifyCommands,
   );
 }
@@ -738,14 +738,14 @@ function checkLiveHardcodedSecretRemoval(options) {
   if (!options.context) return missingLiveConfig("foundational/workload-내-hardcoded-secret-제거", ["context"], verifyCommands);
 
   const externalSecrets = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "externalsecrets", "-A", "-o", "json"], options));
-  if (!externalSecrets.ok) return commandUnknown("foundational/workload-내-hardcoded-secret-제거", externalSecrets.error, "Read ExternalSecret objects with kubectl; if the CRD is absent, install or document the chosen external secret path.", verifyCommands);
+  if (!externalSecrets.ok) return commandUnknown("foundational/workload-내-hardcoded-secret-제거", externalSecrets.error, "kubectl로 ExternalSecret 객체를 조회하세요. CRD가 없다면 선택한 외부 Secret 경로를 설치하거나 문서화하세요.", verifyCommands);
 
   const workloads = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "deployments,statefulsets,daemonsets,jobs,cronjobs", "-A", "-o", "json"], options));
-  if (!workloads.ok) return commandUnknown("foundational/workload-내-hardcoded-secret-제거", workloads.error, "Read workload env configuration with kubectl.", verifyCommands);
+  if (!workloads.ok) return commandUnknown("foundational/workload-내-hardcoded-secret-제거", workloads.error, "kubectl로 워크로드 env 구성을 조회하세요.", verifyCommands);
 
   const failures = (workloads.data.items ?? [])
     .filter((item) => hasHardcodedSecret(workloadPodSpecForLive(item)))
-    .map((item) => `${item.metadata?.namespace ?? "default"}/${item.kind ?? "Workload"}/${item.metadata?.name ?? "<unnamed>"} contains an env-style secret literal`);
+    .map((item) => `${item.metadata?.namespace ?? "default"}/${item.kind ?? "Workload"}/${item.metadata?.name ?? "<unnamed>"}에 env 형식의 Secret literal이 포함되어 있습니다.`);
   const externalSecretCount = (externalSecrets.data.items ?? []).length;
   const status = failures.length > 0 ? "fail" : externalSecretCount > 0 ? "pass" : "warn";
 
@@ -753,8 +753,8 @@ function checkLiveHardcodedSecretRemoval(options) {
     "foundational/workload-내-hardcoded-secret-제거",
     status,
     failures.length > 0 ? "high" : status === "warn" ? "medium" : "low",
-    failures.length > 0 ? failures : [`${externalSecretCount} ExternalSecret object(s) found and no secret-like literal env values were observed.`],
-    "Move runtime secrets to AWS Secrets Manager or an approved external secret path and reference them through valueFrom, ESO, CSI, or runtime lookup.",
+    failures.length > 0 ? failures : [`${externalSecretCount}개 ExternalSecret 객체를 찾았고 Secret처럼 보이는 literal env 값은 관측되지 않았습니다.`],
+    "런타임 Secret은 AWS Secrets Manager 또는 승인된 외부 Secret 경로로 옮기고 valueFrom, ESO, CSI 또는 런타임 조회 방식으로 참조하세요.",
     verifyCommands,
   );
 }
@@ -777,19 +777,19 @@ function checkLiveRbac(options) {
   if (!options.context) return missingLiveConfig("foundational/cluster내-리소스-접근제어", ["context"], verifyCommands);
 
   const namespaced = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "roles,rolebindings", "-A", "-o", "json"], options));
-  if (!namespaced.ok) return commandUnknown("foundational/cluster내-리소스-접근제어", namespaced.error, "Read namespaced RBAC objects with kubectl.", verifyCommands);
+  if (!namespaced.ok) return commandUnknown("foundational/cluster내-리소스-접근제어", namespaced.error, "kubectl로 namespace 범위 RBAC 객체를 조회하세요.", verifyCommands);
 
   const cluster = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "clusterroles,clusterrolebindings", "-o", "json"], options));
-  if (!cluster.ok) return commandUnknown("foundational/cluster내-리소스-접근제어", cluster.error, "Read cluster RBAC objects with kubectl.", verifyCommands);
+  if (!cluster.ok) return commandUnknown("foundational/cluster내-리소스-접근제어", cluster.error, "kubectl로 cluster 범위 RBAC 객체를 조회하세요.", verifyCommands);
 
   const items = [...(namespaced.data.items ?? []), ...(cluster.data.items ?? [])];
   const failures = [];
   for (const item of items) {
     if ((item.kind === "Role" || item.kind === "ClusterRole") && !isDefaultRbacObject(item) && hasWildcardRule(item)) {
-      failures.push(`${item.kind}/${item.metadata?.name ?? "<unnamed>"} uses wildcard RBAC permissions`);
+      failures.push(`${item.kind}/${item.metadata?.name ?? "<unnamed>"}가 wildcard RBAC 권한을 사용합니다.`);
     }
     if (item.kind === "ClusterRoleBinding" && item.roleRef?.name === "cluster-admin" && !isDefaultRbacObject(item)) {
-      failures.push(`ClusterRoleBinding/${item.metadata?.name ?? "<unnamed>"} binds cluster-admin`);
+      failures.push(`ClusterRoleBinding/${item.metadata?.name ?? "<unnamed>"}가 cluster-admin을 바인딩합니다.`);
     }
   }
 
@@ -799,8 +799,8 @@ function checkLiveRbac(options) {
     "foundational/cluster내-리소스-접근제어",
     status,
     failures.length > 0 ? "high" : status === "warn" ? "medium" : "low",
-    failures.length > 0 ? failures : [`${roleBindings} RoleBinding object(s) found and no custom wildcard RBAC or cluster-admin bindings were observed.`],
-    "Keep namespace RBAC explicit, avoid wildcard permissions, and restrict ClusterRoleBinding usage to reviewed platform roles.",
+    failures.length > 0 ? failures : [`${roleBindings}개 RoleBinding 객체를 찾았고, 사용자 정의 wildcard RBAC 또는 cluster-admin 바인딩은 관측되지 않았습니다.`],
+    "네임스페이스 RBAC를 명시적으로 유지하고 wildcard 권한을 피하며, ClusterRoleBinding 사용은 검토된 platform role로 제한하세요.",
     verifyCommands,
   );
 }
@@ -860,9 +860,9 @@ export function scanLiveCluster({ clusterName, context, region, profile, autoDet
 export function renderMarkdown(report) {
   const lines = ["# EKS Maturity Advisor Report", "", `Mode: ${report.mode}`, ""];
   for (const finding of report.findings) {
-    lines.push(`## ${finding.item_id}`, "", `Phase: ${finding.phase}`, `Domain: ${finding.domain}`, `Status: ${finding.status}`, `Severity: ${finding.severity}`, `Priority: ${finding.priority}`, "", "Evidence:");
+    lines.push(`## ${finding.item_id}`, "", `Phase: ${finding.phase}`, `Domain: ${finding.domain}`, `Status: ${finding.status}`, `Severity: ${finding.severity}`, `Priority: ${finding.priority}`, "", "증거:");
     for (const item of finding.evidence) lines.push(`- ${item}`);
-    lines.push("", `Recommendation: ${finding.recommendation}`, "");
+    lines.push("", `권장 조치: ${finding.recommendation}`, "");
   }
   return `${lines.join("\n")}\n`;
 }

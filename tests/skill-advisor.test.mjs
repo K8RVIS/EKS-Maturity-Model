@@ -478,6 +478,43 @@ test("live scanner does not query the current kubectl context when live flags ar
   assert.deepEqual(calls, []);
 });
 
+test("scanner renders Korean evidence and recommendation text", async () => {
+  const { renderMarkdown, scanLiveCluster, scanRepository } = await import("../skills/eks-maturity-advisor/scripts/scan_eks_maturity.mjs");
+  const repoRoot = mkdtempSync(path.join(tmpdir(), "eks-maturity-korean-"));
+
+  writeFixture(
+    path.join(repoRoot, "app.yaml"),
+    `
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: api
+      namespace: team-a
+    spec:
+      template:
+        spec:
+          serviceAccountName: default
+          containers:
+            - name: api
+              image: example/api:latest
+              securityContext:
+                runAsUser: 0
+    `,
+  );
+
+  const repoFinding = findingByItem(scanRepository({ repoRoot }).findings, "quick-wins/non-root-containers");
+  const liveFinding = findingByItem(scanLiveCluster().findings, "foundational/private-api-endpoint");
+  const markdown = renderMarkdown({ mode: "test", findings: [repoFinding] });
+
+  assert.match(repoFinding.evidence[0], /컨테이너|루트|실행/);
+  assert.match(repoFinding.recommendation, /설정|사용|강화/);
+  assert.match(liveFinding.evidence[0], /입력값이 부족합니다/);
+  assert.match(liveFinding.recommendation, /입력값을 제공/);
+  assert.match(markdown, /증거:/);
+  assert.match(markdown, /권장 조치:/);
+  assert.doesNotMatch(markdown, /Evidence:|Recommendation:/);
+});
+
 test("skill release workflow packages the advisor on version tags", () => {
   const workflowPath = path.join(root, ".github/workflows/release-skill.yml");
 
