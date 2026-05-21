@@ -1,0 +1,17 @@
+---
+title: "Foundational"
+description: "EKS 보안 운영의 기반이 되는 클러스터와 네트워크 통제"
+phase: "Foundational"
+sidebar:
+  order: 1
+---
+
+import MaturityMatrix from "../../../components/MaturityMatrix.astro";
+
+# Foundational
+
+Foundational 단계는 이후 보안 통제가 안정적으로 동작하기 위한 기반을 다룹니다. 클러스터 API endpoint, 노드와 Pod의 네트워크 위치, NetworkPolicy 집행처럼 설계 초기에 방향을 잡아야 하는 항목이 중심입니다.
+
+각 항목은 적용 전 상태를 확인하고, 매니페스트 또는 클러스터 설정을 변경한 뒤, 명령으로 기대 결과를 검증하는 흐름으로 읽으면 됩니다.
+
+<MaturityMatrix initialPhase="Foundational" layout="phase-domain" />

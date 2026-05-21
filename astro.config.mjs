@@ -30,17 +30,13 @@ export default defineConfig({
           label: "Foundational",
           autogenerate: { directory: "foundational" },
         },
-        { label: "Efficient", slug: "efficient" },
-        { label: "Optimized", slug: "optimized" },
         {
-          label: "영역별 보기",
-          items: [
-            { label: "접근 제어", slug: "domains/access-control" },
-            { label: "네트워크 보안", slug: "domains/network-security" },
-            { label: "데이터 보호", slug: "domains/data-protection" },
-            { label: "Pod 보안", slug: "domains/pod-security" },
-            { label: "컨테이너 보안", slug: "domains/container-security" },
-          ],
+          label: "Efficient",
+          autogenerate: { directory: "efficient" },
+        },
+        {
+          label: "Optimized",
+          autogenerate: { directory: "optimized" },
         },
       ],
     }),
