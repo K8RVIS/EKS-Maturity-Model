@@ -9,13 +9,13 @@ description: Assess Amazon EKS repositories and Kubernetes manifests against the
 
 Operate read-only by default. Do not run `kubectl apply`, `terraform apply`, `helm upgrade`, `aws eks update-*`, or any command that mutates a cluster, AWS account, or repository unless the user explicitly asks for implementation after reviewing findings.
 
-Automated scanning supports repo-only Quick Wins checks and v1.1 read-only live cluster checks for the approved Foundational slice. Treat the remaining Foundational controls as v1.2 guidance unless the user provides command output to analyze.
+Automated scanning supports repo-only Quick Wins checks and read-only live cluster checks for all Foundational controls in the generated catalog. If live access is missing, return `unknown` findings with the read-only commands needed to verify manually.
 
 ## Workflow
 
 1. Identify the input type:
    - Repository path or manifests: run or read `scripts/scan_eks_maturity.mjs`.
-   - Live cluster request: run `scripts/scan_eks_maturity.mjs --live` only with read-only `kubectl get` and `aws describe/list` access.
+   - Live cluster request: run `scripts/scan_eks_maturity.mjs --live` only with read-only `kubectl get` and `aws describe/list/get` access.
    - Scanner JSON: interpret the findings directly.
    - User-pasted YAML: assess it against the same Quick Wins rules.
    - Conceptual question: answer from `references/quick-wins-v1.md` and `references/catalog.json` when present.
@@ -49,6 +49,15 @@ node skills/eks-maturity-advisor/scripts/scan_eks_maturity.mjs \
   --output markdown
 ```
 
+Auto-detect live scan inputs from the current kubeconfig:
+
+```bash
+node skills/eks-maturity-advisor/scripts/scan_eks_maturity.mjs \
+  --live \
+  --auto-detect \
+  --output markdown
+```
+
 Scan a live cluster read-only:
 
 ```bash
@@ -76,7 +85,7 @@ item_id, phase, domain, status, severity, priority, evidence, recommendation, ve
 
 Prefer saying what is observable over overstating certainty. For example, “No Ingress manifest was found, so TLS cannot be assessed from this repo” is better than “TLS is not configured.”
 
-## v1.1 Live Foundational Scope
+## Live Foundational Scope
 
 Automated live checks cover:
 
@@ -85,8 +94,11 @@ Automated live checks cover:
 - `foundational/default-deny-networkpolicy`
 - `foundational/pod-실행-권한-최소화`
 - `foundational/iam-k8s-mapping`
-
-Keep Grafana, Inspector triage, EBS workload storage protection, hardcoded secret removal beyond static manifest signals, and detailed RBAC validation as v1.2 follow-up guidance.
+- `foundational/container-image-취약점-관리`
+- `foundational/grafana-대시보드-연결`
+- `foundational/ebs-기반-workload-storage-data-보호`
+- `foundational/workload-내-hardcoded-secret-제거`
+- `foundational/cluster내-리소스-접근제어`
 
 ## References
 

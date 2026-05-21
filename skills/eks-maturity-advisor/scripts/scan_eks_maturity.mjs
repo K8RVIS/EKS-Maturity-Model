@@ -18,6 +18,11 @@ const ITEM_METADATA = {
   "foundational/default-deny-networkpolicy": { phase: "Foundational", domain: "네트워크 보안" },
   "foundational/pod-실행-권한-최소화": { phase: "Foundational", domain: "Pod 보안" },
   "foundational/iam-k8s-mapping": { phase: "Foundational", domain: "접근 제어" },
+  "foundational/container-image-취약점-관리": { phase: "Foundational", domain: "Pod 보안" },
+  "foundational/grafana-대시보드-연결": { phase: "Foundational", domain: "Pod 보안" },
+  "foundational/ebs-기반-workload-storage-data-보호": { phase: "Foundational", domain: "데이터 보호" },
+  "foundational/workload-내-hardcoded-secret-제거": { phase: "Foundational", domain: "데이터 보호" },
+  "foundational/cluster내-리소스-접근제어": { phase: "Foundational", domain: "접근 제어" },
 };
 const PRIORITY_ORDER = new Map([
   ["P1", 0],
@@ -268,6 +273,14 @@ function readJson(commandRunner, command, args) {
   }
 }
 
+function readText(commandRunner, command, args) {
+  try {
+    return { ok: true, text: commandRunner({ command, args }) };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
+}
+
 function awsArgs(service, operation, args, { region, profile } = {}) {
   return [
     service,
@@ -313,6 +326,42 @@ function isEmptySelector(selector) {
 
 function liveContainersForPod(pod) {
   return [...(pod.spec?.containers ?? []), ...(pod.spec?.initContainers ?? [])];
+}
+
+function workloadPodSpecForLive(item) {
+  if (item.kind === "Pod") return item.spec ?? null;
+  if (item.kind === "CronJob") return item.spec?.jobTemplate?.spec?.template?.spec ?? null;
+  return item.spec?.template?.spec ?? null;
+}
+
+function parseEksContextArn(context) {
+  const match = /^arn:aws[^:]*:eks:([^:]+):\d+:cluster\/(.+)$/.exec(context ?? "");
+  if (!match) return {};
+  return { region: match[1], clusterName: match[2] };
+}
+
+function valueAfter(args, flag) {
+  const index = args.indexOf(flag);
+  return index === -1 ? null : args[index + 1];
+}
+
+export function detectLiveConfig({ commandRunner = defaultCommandRunner } = {}) {
+  const current = readText(commandRunner, "kubectl", ["config", "current-context"]);
+  if (!current.ok) return {};
+
+  const context = current.text.trim();
+  const fromContext = parseEksContextArn(context);
+  const config = readJson(commandRunner, "kubectl", ["config", "view", "--minify", "-o", "json"]);
+  const execConfig = config.ok ? config.data.users?.[0]?.user?.exec ?? {} : {};
+  const execArgs = execConfig.args ?? [];
+  const profile = (execConfig.env ?? []).find((entry) => entry.name === "AWS_PROFILE")?.value ?? null;
+
+  return {
+    context,
+    clusterName: valueAfter(execArgs, "--cluster-name") ?? fromContext.clusterName ?? null,
+    region: valueAfter(execArgs, "--region") ?? fromContext.region ?? null,
+    profile,
+  };
 }
 
 function checkLivePrivateApiEndpoint(options) {
@@ -535,6 +584,227 @@ function checkLiveIamK8sMapping(options) {
   );
 }
 
+function checkLiveContainerImageTriage(options) {
+  const verifyCommands = [
+    "aws inspector2 list-filters --action SUPPRESS --region <region> --output json",
+    "aws inspector2 list-findings --region <region> --filter-criteria '<critical-high-ecr-active-filter>' --output json",
+  ];
+  if (!options.region) return missingLiveConfig("foundational/container-image-취약점-관리", ["region"], verifyCommands);
+
+  const filters = readJson(options.commandRunner, "aws", awsArgs("inspector2", "list-filters", ["--action", "SUPPRESS"], options));
+  if (!filters.ok) {
+    return commandUnknown("foundational/container-image-취약점-관리", filters.error, "List Inspector suppression filters with read-only AWS credentials.", verifyCommands);
+  }
+
+  const findings = readJson(
+    options.commandRunner,
+    "aws",
+    awsArgs("inspector2", "list-findings", [
+      "--filter-criteria",
+      '{"resourceType":[{"comparison":"EQUALS","value":"AWS_ECR_CONTAINER_IMAGE"}],"findingStatus":[{"comparison":"EQUALS","value":"ACTIVE"}],"severity":[{"comparison":"EQUALS","value":"CRITICAL"},{"comparison":"EQUALS","value":"HIGH"}]}',
+    ], options),
+  );
+  if (!findings.ok) {
+    return commandUnknown("foundational/container-image-취약점-관리", findings.error, "List active Critical/High ECR Inspector findings with read-only AWS credentials.", verifyCommands);
+  }
+
+  const suppressFilters = filters.data.filters ?? [];
+  const activeFindings = findings.data.findings ?? [];
+  const status = activeFindings.length > 0 ? "fail" : suppressFilters.length > 0 ? "pass" : "warn";
+  return finding(
+    "foundational/container-image-취약점-관리",
+    status,
+    activeFindings.length > 0 ? "high" : status === "warn" ? "medium" : "low",
+    [
+      `${suppressFilters.length} Inspector suppression filter(s) found.`,
+      `${activeFindings.length} active Critical/High ECR finding(s) found.`,
+    ],
+    "Maintain documented Inspector triage suppression filters and remediate active Critical/High ECR findings within the agreed SLA.",
+    verifyCommands,
+  );
+}
+
+function checkLiveGrafana(options) {
+  const verifyCommands = [
+    "kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana -o json",
+    "kubectl get pvc -n monitoring -o json",
+    "kubectl get ingress -n monitoring -o json",
+  ];
+  if (!options.context) return missingLiveConfig("foundational/grafana-대시보드-연결", ["context"], verifyCommands);
+
+  const pods = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "pods", "-n", "monitoring", "-l", "app.kubernetes.io/name=grafana", "-o", "json"], options));
+  if (!pods.ok) return commandUnknown("foundational/grafana-대시보드-연결", pods.error, "Read Grafana pods from the monitoring namespace.", verifyCommands);
+
+  const pvcs = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "pvc", "-n", "monitoring", "-o", "json"], options));
+  if (!pvcs.ok) return commandUnknown("foundational/grafana-대시보드-연결", pvcs.error, "Read Grafana PVCs from the monitoring namespace.", verifyCommands);
+
+  const ingresses = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "ingress", "-n", "monitoring", "-o", "json"], options));
+  if (!ingresses.ok) return commandUnknown("foundational/grafana-대시보드-연결", ingresses.error, "Read Grafana ingress from the monitoring namespace.", verifyCommands);
+
+  const runningPods = (pods.data.items ?? []).filter((pod) => pod.status?.phase === "Running");
+  const grafanaPvcs = (pvcs.data.items ?? []).filter((pvc) => /grafana/i.test(pvc.metadata?.name ?? ""));
+  const boundPvcs = grafanaPvcs.filter((pvc) => pvc.status?.phase === "Bound");
+  const hasIngress = (ingresses.data.items ?? []).length > 0;
+  const failures = [];
+  if (runningPods.length === 0) failures.push("No Running Grafana pod was found in namespace monitoring.");
+  if (grafanaPvcs.length > 0 && boundPvcs.length !== grafanaPvcs.length) failures.push("One or more Grafana PVCs are not Bound.");
+  if (!hasIngress) failures.push("No Grafana ingress was found in namespace monitoring.");
+
+  return finding(
+    "foundational/grafana-대시보드-연결",
+    failures.length > 0 ? "warn" : "pass",
+    failures.length > 0 ? "medium" : "low",
+    failures.length > 0 ? failures : [`${runningPods.length} Grafana pod(s) Running, ${boundPvcs.length} Grafana PVC(s) Bound, and ingress exists.`],
+    "Keep Grafana running with persistent encrypted storage and an explicitly reviewed access path.",
+    verifyCommands,
+  );
+}
+
+function volumeIdFromHandle(handle) {
+  if (!handle) return null;
+  const match = /(vol-[a-zA-Z0-9]+)/.exec(handle);
+  return match?.[1] ?? null;
+}
+
+function checkLiveEbsStorageProtection(options) {
+  const verifyCommands = [
+    "aws ec2 get-ebs-encryption-by-default --region <region> --output json",
+    "kubectl get storageclass -o json",
+    "kubectl get pvc -A -o json",
+    "kubectl get pv -o json",
+  ];
+  const missing = [];
+  if (!options.region) missing.push("region");
+  if (!options.context) missing.push("context");
+  if (missing.length > 0) return missingLiveConfig("foundational/ebs-기반-workload-storage-data-보호", missing, verifyCommands);
+
+  const defaultEncryption = readJson(options.commandRunner, "aws", awsArgs("ec2", "get-ebs-encryption-by-default", [], options));
+  if (!defaultEncryption.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", defaultEncryption.error, "Read EBS default encryption state with read-only AWS credentials.", verifyCommands);
+
+  const storageClasses = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "storageclass", "-o", "json"], options));
+  if (!storageClasses.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", storageClasses.error, "Read StorageClass objects with kubectl.", verifyCommands);
+
+  const pvcs = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "pvc", "-A", "-o", "json"], options));
+  if (!pvcs.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", pvcs.error, "Read PVC objects with kubectl.", verifyCommands);
+
+  const pvs = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "pv", "-o", "json"], options));
+  if (!pvs.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", pvs.error, "Read PV objects with kubectl.", verifyCommands);
+
+  const failures = [];
+  if (defaultEncryption.data.EbsEncryptionByDefault !== true) failures.push("AWS EBS encryption by default is not enabled in this region.");
+
+  const classByName = new Map((storageClasses.data.items ?? []).map((storageClass) => [storageClass.metadata?.name, storageClass]));
+  for (const storageClass of storageClasses.data.items ?? []) {
+    if (storageClass.provisioner === "ebs.csi.aws.com" || storageClass.provisioner === "kubernetes.io/aws-ebs") {
+      if (String(storageClass.parameters?.encrypted).toLowerCase() !== "true") {
+        failures.push(`StorageClass ${storageClass.metadata?.name ?? "<unnamed>"} does not set parameters.encrypted=true`);
+      }
+    }
+  }
+
+  for (const pvc of pvcs.data.items ?? []) {
+    const storageClassName = pvc.spec?.storageClassName;
+    if (!storageClassName || !classByName.has(storageClassName)) {
+      failures.push(`${pvc.metadata?.namespace ?? "default"}/${pvc.metadata?.name ?? "<unnamed>"} does not reference a known encrypted StorageClass`);
+    }
+  }
+
+  const volumeIds = (pvs.data.items ?? [])
+    .map((pv) => volumeIdFromHandle(pv.spec?.csi?.volumeHandle ?? pv.spec?.awsElasticBlockStore?.volumeID))
+    .filter(Boolean);
+  if (volumeIds.length > 0) {
+    const volumes = readJson(options.commandRunner, "aws", awsArgs("ec2", "describe-volumes", ["--volume-ids", ...volumeIds], options));
+    if (!volumes.ok) return commandUnknown("foundational/ebs-기반-workload-storage-data-보호", volumes.error, "Describe backing EBS volumes with read-only AWS credentials.", verifyCommands);
+    for (const volume of volumes.data.Volumes ?? []) {
+      if (volume.Encrypted !== true) failures.push(`EBS volume ${volume.VolumeId} is not encrypted`);
+    }
+  }
+
+  return finding(
+    "foundational/ebs-기반-workload-storage-data-보호",
+    failures.length > 0 ? "fail" : "pass",
+    failures.length > 0 ? "high" : "low",
+    failures.length > 0 ? failures : ["EBS default encryption, StorageClass encryption, PVC references, and observed EBS PV volumes are encrypted."],
+    "Enable EBS encryption by default, require encrypted EBS CSI StorageClasses, and migrate any unencrypted PV-backed workloads.",
+    verifyCommands,
+  );
+}
+
+function checkLiveHardcodedSecretRemoval(options) {
+  const verifyCommands = [
+    "kubectl get externalsecrets -A -o json",
+    "kubectl get deployments,statefulsets,daemonsets,jobs,cronjobs -A -o json",
+  ];
+  if (!options.context) return missingLiveConfig("foundational/workload-내-hardcoded-secret-제거", ["context"], verifyCommands);
+
+  const externalSecrets = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "externalsecrets", "-A", "-o", "json"], options));
+  if (!externalSecrets.ok) return commandUnknown("foundational/workload-내-hardcoded-secret-제거", externalSecrets.error, "Read ExternalSecret objects with kubectl; if the CRD is absent, install or document the chosen external secret path.", verifyCommands);
+
+  const workloads = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "deployments,statefulsets,daemonsets,jobs,cronjobs", "-A", "-o", "json"], options));
+  if (!workloads.ok) return commandUnknown("foundational/workload-내-hardcoded-secret-제거", workloads.error, "Read workload env configuration with kubectl.", verifyCommands);
+
+  const failures = (workloads.data.items ?? [])
+    .filter((item) => hasHardcodedSecret(workloadPodSpecForLive(item)))
+    .map((item) => `${item.metadata?.namespace ?? "default"}/${item.kind ?? "Workload"}/${item.metadata?.name ?? "<unnamed>"} contains an env-style secret literal`);
+  const externalSecretCount = (externalSecrets.data.items ?? []).length;
+  const status = failures.length > 0 ? "fail" : externalSecretCount > 0 ? "pass" : "warn";
+
+  return finding(
+    "foundational/workload-내-hardcoded-secret-제거",
+    status,
+    failures.length > 0 ? "high" : status === "warn" ? "medium" : "low",
+    failures.length > 0 ? failures : [`${externalSecretCount} ExternalSecret object(s) found and no secret-like literal env values were observed.`],
+    "Move runtime secrets to AWS Secrets Manager or an approved external secret path and reference them through valueFrom, ESO, CSI, or runtime lookup.",
+    verifyCommands,
+  );
+}
+
+function isDefaultRbacObject(item) {
+  const name = item.metadata?.name ?? "";
+  const labels = item.metadata?.labels ?? {};
+  return name.startsWith("system:") || labels["kubernetes.io/bootstrapping"] === "rbac-defaults";
+}
+
+function hasWildcardRule(item) {
+  return (item.rules ?? []).some((rule) => (rule.verbs ?? []).includes("*") || (rule.resources ?? []).includes("*"));
+}
+
+function checkLiveRbac(options) {
+  const verifyCommands = [
+    "kubectl get roles,rolebindings -A -o json",
+    "kubectl get clusterroles,clusterrolebindings -o json",
+  ];
+  if (!options.context) return missingLiveConfig("foundational/cluster내-리소스-접근제어", ["context"], verifyCommands);
+
+  const namespaced = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "roles,rolebindings", "-A", "-o", "json"], options));
+  if (!namespaced.ok) return commandUnknown("foundational/cluster내-리소스-접근제어", namespaced.error, "Read namespaced RBAC objects with kubectl.", verifyCommands);
+
+  const cluster = readJson(options.commandRunner, "kubectl", kubectlArgs(["get", "clusterroles,clusterrolebindings", "-o", "json"], options));
+  if (!cluster.ok) return commandUnknown("foundational/cluster내-리소스-접근제어", cluster.error, "Read cluster RBAC objects with kubectl.", verifyCommands);
+
+  const items = [...(namespaced.data.items ?? []), ...(cluster.data.items ?? [])];
+  const failures = [];
+  for (const item of items) {
+    if ((item.kind === "Role" || item.kind === "ClusterRole") && !isDefaultRbacObject(item) && hasWildcardRule(item)) {
+      failures.push(`${item.kind}/${item.metadata?.name ?? "<unnamed>"} uses wildcard RBAC permissions`);
+    }
+    if (item.kind === "ClusterRoleBinding" && item.roleRef?.name === "cluster-admin" && !isDefaultRbacObject(item)) {
+      failures.push(`ClusterRoleBinding/${item.metadata?.name ?? "<unnamed>"} binds cluster-admin`);
+    }
+  }
+
+  const roleBindings = items.filter((item) => item.kind === "RoleBinding").length;
+  const status = failures.length > 0 ? "fail" : roleBindings > 0 ? "pass" : "warn";
+  return finding(
+    "foundational/cluster내-리소스-접근제어",
+    status,
+    failures.length > 0 ? "high" : status === "warn" ? "medium" : "low",
+    failures.length > 0 ? failures : [`${roleBindings} RoleBinding object(s) found and no custom wildcard RBAC or cluster-admin bindings were observed.`],
+    "Keep namespace RBAC explicit, avoid wildcard permissions, and restrict ClusterRoleBinding usage to reviewed platform roles.",
+    verifyCommands,
+  );
+}
+
 export function scanRepository({ repoRoot = process.cwd() } = {}) {
   const absoluteRoot = path.resolve(repoRoot);
   const entries = loadDocuments(absoluteRoot);
@@ -554,22 +824,35 @@ export function scanRepository({ repoRoot = process.cwd() } = {}) {
   };
 }
 
-export function scanLiveCluster({ clusterName, context, region, profile, commandRunner = defaultCommandRunner } = {}) {
-  const options = { clusterName, context, region, profile, commandRunner };
+export function scanLiveCluster({ clusterName, context, region, profile, autoDetect = false, commandRunner = defaultCommandRunner } = {}) {
+  const detected = autoDetect ? detectLiveConfig({ commandRunner }) : {};
+  const options = {
+    clusterName: clusterName ?? detected.clusterName,
+    context: context ?? detected.context,
+    region: region ?? detected.region,
+    profile: profile ?? detected.profile,
+    commandRunner,
+  };
   const findings = [
     checkLivePrivateApiEndpoint(options),
     checkLivePrivateSubnets(options),
     checkLiveDefaultDenyNetworkPolicy(options),
     checkLivePodSecurityBaseline(options),
     checkLiveIamK8sMapping(options),
+    checkLiveContainerImageTriage(options),
+    checkLiveGrafana(options),
+    checkLiveEbsStorageProtection(options),
+    checkLiveHardcodedSecretRemoval(options),
+    checkLiveRbac(options),
   ];
 
   return {
     scanner: "eks-maturity-advisor",
     mode: "live-cluster",
-    cluster_name: clusterName ?? null,
-    kubectl_context: context ?? null,
-    region: region ?? null,
+    cluster_name: options.clusterName ?? null,
+    kubectl_context: options.context ?? null,
+    region: options.region ?? null,
+    aws_profile: options.profile ?? null,
     findings: sortFindings(findings),
   };
 }
@@ -595,6 +878,7 @@ function parseArgs(argv) {
     if (arg === "--cluster-name") args.clusterName = argv[++index];
     if (arg === "--region") args.region = argv[++index];
     if (arg === "--profile") args.profile = argv[++index];
+    if (arg === "--auto-detect") args.autoDetect = true;
   }
   return args;
 }

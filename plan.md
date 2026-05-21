@@ -3,7 +3,7 @@
 ## Summary
 Quick Wins와 Foundational 항목을 기반으로 `eks-maturity-advisor` Codex Skill을 만든다. 원본은 `EKS-Maturity-Model/skills/eks-maturity-advisor`에 보관하고, 필요 시 Codex 설치 경로로 복사해 사용한다.
 
-v1.1의 기본 목적은 **repo/manifest + live cluster read-only 진단**이다. 에이전트는 현재 상태를 보고 성숙도 gap, 위험도, 우선순위, 적용 가이드, 검증 방법을 제시한다. 실제 클러스터나 repo 변경은 수행하지 않는다.
+v1.2의 기본 목적은 **repo/manifest + live cluster read-only 진단**이다. 에이전트는 현재 상태를 보고 성숙도 gap, 위험도, 우선순위, 적용 가이드, 검증 방법을 제시한다. 실제 클러스터나 repo 변경은 수행하지 않는다.
 
 ## Key Changes
 - Skill 구조:
@@ -18,7 +18,8 @@ v1.1의 기본 목적은 **repo/manifest + live cluster read-only 진단**이다
   - `EKS-Maturity-Model/src/data/maturity-items.json`
 - Scanner 범위:
   - Repo/manifest: ServiceAccount token, non-root/securityContext, Ingress TLS, ResourceQuota/LimitRange, hardcoded secret 의심 패턴.
-  - Live cluster v1.1: private API endpoint, private nodegroup subnets, default deny NetworkPolicy, namespace PSS baseline, EKS Access Entries.
+  - Live cluster v1.2: Foundational 10개 항목 전체. private API endpoint, private nodegroup subnets, default deny NetworkPolicy, namespace PSS baseline, EKS Access Entries, Inspector triage, Grafana, EBS storage protection, workload secret 제거, RBAC 검증.
+  - Live input 자동 감지: `--auto-detect` 사용 시 kubeconfig current context에서 EKS cluster name, region, kubectl context, AWS profile을 추론한다.
   - 출력은 `pass | warn | fail | unknown`, 관련 maturity 항목, severity, priority, 증거, 권장 조치, 검증 명령으로 통일.
 - Skill 답변 정책:
   - 먼저 Quick Wins gap을 정리하고, 그다음 Foundational gap을 제시한다.
@@ -33,6 +34,7 @@ v1.1의 기본 목적은 **repo/manifest + live cluster read-only 진단**이다
 - Scanner CLI:
   - `node skills/eks-maturity-advisor/scripts/scan_eks_maturity.mjs --repo-root <path> --output markdown`
   - `node skills/eks-maturity-advisor/scripts/scan_eks_maturity.mjs --live --context <kubectl-context> --cluster-name <name> --region <region> --output json`
+  - `node skills/eks-maturity-advisor/scripts/scan_eks_maturity.mjs --live --auto-detect --output json`
 - Report schema:
   - `item_id`, `phase`, `domain`, `status`, `severity`, `priority`, `evidence`, `recommendation`, `verify_commands`, `source_reference`.
 
@@ -52,18 +54,18 @@ v1.1의 기본 목적은 **repo/manifest + live cluster read-only 진단**이다
   - live cluster 권한이나 도구가 없으면 실패하지 않고 `unknown`과 필요한 조회 명령을 출력한다.
 
 ## Assumptions
-- v1.1 범위는 repo-only Quick Wins 5개와 live Foundational 5개만 포함한다.
+- v1.2 범위는 repo-only Quick Wins 5개와 live Foundational 10개를 포함한다.
 - 원본 skill은 repo에 보관하고, Codex 직접 설치는 별도 후속 단계로 둔다.
 - live cluster 지원은 read-only 진단만 허용한다.
-- 자동 수정, `kubectl apply`, Terraform apply, 클러스터 변경은 v1.1 범위에서 제외한다.
+- 자동 수정, `kubectl apply`, Terraform apply, 클러스터 변경은 v1.2 범위에서 제외한다.
 
 ## Feedback 반영 결정
-- v1.1의 1차 타겟은 **Codex Skill**로 고정한다. GPTs, Assistants API, Claude Code 전용 배포는 v1.1 범위 밖으로 둔다.
+- v1.2의 1차 타겟은 **Codex Skill**로 고정한다. GPTs, Assistants API, Claude Code 전용 배포는 v1.2 범위 밖으로 둔다.
 - `agents/openai.yaml`은 GPT Action 설정이 아니라 Codex skill UI metadata로 사용한다.
 - LLM은 scanner 결과를 단순 표시하지 않고, maturity 항목 매핑, 우선순위화, remediation 안내, 불확실성 설명을 담당한다.
 - `catalog.json`은 수동 관리 파일이 아니라 기존 docs와 `maturity-items.json`에서 생성되는 artifact로 둔다.
 - v1 scanner는 repo-only Quick Wins 5개 항목부터 구현했다. v1.1은 live cluster 진단과 Foundational 자동 스캔 5개 항목을 추가한다.
-- Grafana, Inspector triage, EBS workload storage protection, hardcoded secret 제거 심화, 상세 RBAC 검증은 v1.2로 미룬다.
+- v1.2에서 Grafana, Inspector triage, EBS workload storage protection, hardcoded secret 제거 심화, 상세 RBAC 검증과 kubeconfig 기반 live input 자동 감지를 추가한다.
 - Codex skill packaging 검증은 `quick_validate.py`를 보조로 사용하고, repo CI에서는 자체 테스트를 우선한다.
 
 ## 배포 전략
@@ -85,7 +87,7 @@ v1.1의 기본 목적은 **repo/manifest + live cluster read-only 진단**이다
 
 ### 강점
 
-- v1.1 범위 경계(repo-only Quick Wins + live Foundational 5개, read-only 진단, 자동 수정 제외)가 명확하다.
+- v1.2 범위 경계(repo-only Quick Wins + live Foundational 10개, read-only 진단, 자동 수정 제외)가 명확하다.
 - 출력 스키마(`item_id / phase / domain / status / severity / evidence / recommendation / verify_commands / source_reference`)가 LLM 파싱과 사람이 읽는 리포트 양쪽에 적합하다.
 - fixture manifest 기반 단위 테스트 + kubectl/aws mock 전략은 실제 클러스터 없이 CI가 돌아갈 수 있어 현실적이다.
 
