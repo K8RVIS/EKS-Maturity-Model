@@ -1,6 +1,6 @@
 # Pod별 IAM Role 부여를 통해 워크로드별 AWS 권한을 분리한다
 
-> **Phase:** Efficient
+> **Phase:** Foundational
 >
 > **보안 영역:** 접근 제어
 >
