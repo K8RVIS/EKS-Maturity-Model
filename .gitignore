@@ -3,3 +3,8 @@ dist/
 .astro/
 .DS_Store
 npm-debug.log*
+
+# Local planning documents
+docs/
+DESIGN.md
+plan.md
