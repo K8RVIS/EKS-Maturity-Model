@@ -129,12 +129,8 @@ kubectl get namespaces -l 'pod-security.kubernetes.io/enforce=baseline' \
 
 ## 발생 비용
 
-| 항목 | 내용 |
-| --- | --- |
-| 담당자 | 공통 실습 또는 플랫폼/DevSecOps 담당자 |
-| AWS 추가 비용 | PSS는 Kubernetes 내장 기능으로 추가 비용 없음 |
-| 도구 비용 | 없음 |
-| 운영 고려사항 | 기존 클러스터에 enforce를 처음 적용할 때는 audit/warn 모드를 먼저 활성화해 위반 워크로드를 파악한 뒤 enforce로 전환한다. |
+- **AWS 비용 발생 여부 및 예상 규모:** PSS는 Kubernetes 내장 기능으로 추가 비용 없음. 
+- **운영 고려 사항:** 기존 클러스터에 enforce를 처음 적용할 때는 audit/warn 모드를 먼저 활성화해 위반 워크로드를 파악한 뒤 enforce로 전환한다. 
 
 ---
 

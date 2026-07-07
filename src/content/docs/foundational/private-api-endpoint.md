@@ -490,9 +490,9 @@ private-only 전환에도 운영 리스크가 있다.
 
 ## 발생 비용
 
-- AWS 추가 비용: VPC Peering 자체는 시간당 비용이 없지만, AZ 간/리전 간 데이터 전송 비용이 발생할 수 있다.
-- 운영 비용: VPN EC2 또는 exit node 운영 비용이 발생한다. 기존 VPN EC2를 사용하면 추가 인스턴스 비용은 없다.
-- 도구 비용:  Terraform, kubectl은 별도 도구 비용 없음.
+- **AWS 추가 비용:** VPC Peering 자체는 시간당 비용이 없지만, AZ 간/리전 간 데이터 전송 비용이 발생할 수 있다.
+- **운영 비용:** VPN EC2 또는 exit node 운영 비용이 발생한다. 기존 VPN EC2를 사용하면 추가 인스턴스 비용은 없다.
+- **도구 비용:** Terraform, kubectl은 별도 도구 비용 없음.
 
 ## 참고 자료
 

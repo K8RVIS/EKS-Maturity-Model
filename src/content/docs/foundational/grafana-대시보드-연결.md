@@ -196,12 +196,8 @@ Grafana UI → Configuration → Data Sources → Prometheus → Test
 
 ## 발생 비용
 
-| 항목 | 내용 |
-| --- | --- |
-| 담당자 | 공통 실습 또는 플랫폼/DevSecOps 담당자 |
-| AWS 추가 비용 | Grafana PVC용 EBS GP3 스토리지 비용 발생 (5Gi 기준 약 월 $0.5) |
-| 도구 비용 | Grafana OSS는 무료. 엔터프라이즈 기능이 필요하면 Grafana Cloud 또는 Amazon Managed Grafana 검토 |
-| 운영 고려사항 | 관리자 비밀번호를 환경변수로 주입하면 CI/CD 파이프라인에서 Secrets 관리가 필요하다. AWS Secrets Manager 또는 SSM Parameter Store 연동을 검토한다. |
+- **AWS 비용 발생 여부 및 예상 규모:** Grafana PVC용 EBS GP3 스토리지 비용 발생 (5Gi 기준 약 월 $0.5) Grafana OSS는 무료. 엔터프라이즈 기능이 필요하면 Grafana Cloud 또는 Amazon Managed Grafana 검토 
+- **운영 고려 사항:**관리자 비밀번호를 환경변수로 주입하면 CI/CD 파이프라인에서 Secrets 관리가 필요하다. AWS Secrets Manager 또는 SSM Parameter Store 연동을 검토한다. 
 
 ---
 
