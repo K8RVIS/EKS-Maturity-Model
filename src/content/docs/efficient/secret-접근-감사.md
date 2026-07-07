@@ -3,8 +3,6 @@ title: "Secret 접근을 감사하고 추적한다"
 description: "Kubernetes Secret과 AWS Secrets Manager는 민감정보를 코드와 매니페스트에서 분리하기 위한 핵심 저장소다. 하지만 Secret 저장 위치를 안전하게 바꾸는 것만으로는 충분하지 않다. 누가 언제 어떤 Secret을 조회했는지 추적할 수 없으면 "
 phase: "Efficient"
 domain: "데이터 보호"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 40
 sidebar:
   order: 40
@@ -38,7 +36,7 @@ Secret 접근 감사는 두 계층을 함께 봐야 한다.
 - AWS Secrets Manager를 사용하는 경우 CloudTrail Event history 또는 조직 Trail 조회 권한이 필요하다.
 - 감사 로그 보존 기간, 비용, 조회 권한을 운영 정책으로 정해야 한다.
 
-### **Step 1: EKS control plane audit/authenticator 로그를 활성화한다**
+### Step 1: EKS control plane audit/authenticator 로그를 활성화한다
 
 EKS 클러스터의 `enabled_cluster_log_types`에 `audit`, `authenticator`를 포함한다.
 
@@ -71,7 +69,7 @@ resource "aws_eks_cluster" "this" {
 
 `audit` 로그는 Kubernetes API 요청의 주체, verb, objectRef, 응답 코드, source IP를 확인하기 위한 핵심 로그다. `authenticator` 로그는 IAM principal이 Kubernetes 사용자로 인증되는 과정을 추적할 때 사용한다.
 
-### **Step 2: Control Plane Log Group을 명시적으로 관리한다**
+### Step 2: Control Plane Log Group을 명시적으로 관리한다
 
 CloudWatch Log Group은 클러스터 이름에 맞춰 생성하고 retention을 설정한다. 실습 환경에서는 비용을 고려해 7일을 둘 수 있지만, 운영 환경에서는 사고 조사와 규정 요구사항에 맞춰 30일, 90일, 180일 이상을 검토한다.
 
@@ -120,7 +118,7 @@ output "cluster_enabled_log_types" {
 }
 ```
 
-### **Step 3: 모든 namespace의 Secret API 접근을 조회한다**
+### Step 3: 모든 namespace의 Secret API 접근을 조회한다
 
 CloudWatch Logs Insights에서 EKS control plane log group을 선택한 뒤 다음 쿼리를 실행한다.
 
@@ -144,7 +142,7 @@ fields @timestamp, verb, user.username, user.extra.arn.0, objectRef.namespace, o
 
 운영에서는 namespace 필터를 고정하지 말고 대시보드 변수나 쿼리 조건으로 선택할 수 있게 둔다. Secret 접근 감사의 기본 관점은 전체 클러스터이고, namespace 필터는 조사 편의를 위한 보조 조건이다.
 
-### **Step 4: 위험도가 높은 Secret 접근 패턴을 별도 쿼리로 본다**
+### Step 4: 위험도가 높은 Secret 접근 패턴을 별도 쿼리로 본다
 
 전체 접근 목록만으로는 이상 행위를 놓치기 쉽다. 아래 쿼리는 특히 주의할 이벤트를 빠르게 찾기 위한 예시다.
 
@@ -190,7 +188,7 @@ fields @timestamp, verb, user.username, user.extra.arn.0, objectRef.namespace, o
 
 이상 접근 판단은 환경별 정상 운영 패턴을 함께 봐야 한다. 예를 들어 External Secrets Operator, Argo CD, controller-manager가 Secret을 읽는 행위는 정상일 수 있지만, 개발자 IAM role이 여러 namespace의 Secret을 반복적으로 `list`하는 행위는 조사 대상이다.
 
-### **Step 5: authenticator 로그로 IAM 주체를 연결한다**
+### Step 5: authenticator 로그로 IAM 주체를 연결한다
 
 Audit log의 `user.username`만으로는 실제 AWS IAM principal을 바로 파악하기 어려운 경우가 있다. `authenticator` 로그에서 같은 시간대의 인증 이벤트를 확인해 Kubernetes 사용자와 IAM ARN을 연결한다.
 
@@ -211,7 +209,7 @@ fields @timestamp, @message
 - verb와 response code
 - 요청이 정상 운영 도구에서 발생했는지 여부
 
-### **Step 6: AWS Secrets Manager 원본 Secret 조회를 CloudTrail로 확인한다**
+### Step 6: AWS Secrets Manager 원본 Secret 조회를 CloudTrail로 확인한다
 
 Kubernetes Secret 접근과 별도로, AWS Secrets Manager의 원본 Secret을 직접 조회하는 행위도 감사해야 한다. 
 
@@ -254,7 +252,7 @@ aws cloudtrail lookup-events \
 
 운영 환경에서는 Event history만으로 충분하지 않을 수 있다. 장기 보존, 중앙 계정 수집, Athena 분석, GuardDuty/Detective 연계를 원한다면 조직 Trail 또는 CloudTrail Lake를 구성한다.
 
-### **Step 7: 알림과 운영 절차로 연결한다**
+### Step 7: 알림과 운영 절차로 연결한다
 
 Efficient 단계의 감사는 단순 조회에서 끝나면 효과가 제한된다. 최소한 다음 조건은 알림 또는 정기 점검 대상으로 만든다.
 
@@ -360,7 +358,7 @@ terraform plan
 - **비용 리스크:** 로그를 무제한 보존하거나 불필요한 control plane log를 모두 켜면 CloudWatch 비용이 급증할 수 있다. 보존 기간과 필터링 기준을 명확히 정해야 한다.
 - **심각도:** **높음**. Secret 접근은 데이터 유출과 권한 확대로 직접 이어질 수 있으며, 감사 부재는 사고 대응 시간을 크게 늘린다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - **AWS 비용 발생 여부 및 예상 규모:** EKS control plane log 전송과 CloudWatch Logs 저장, Logs Insights 조회 비용이 발생한다. 실습 환경은 7일 retention으로 비용을 줄일 수 있으나, 운영 환경은 보존 정책에 따라 비용을 산정해야 한다.
 - **CloudTrail 비용:** Event history 조회 자체는 기본 기능으로 사용할 수 있다. 조직 Trail, CloudTrail Lake, S3 장기 보존, Athena 분석을 추가하면 저장 및 조회 비용이 발생한다.
@@ -391,7 +389,7 @@ terraform plan
 - **[AWS Well-Architected Framework - Security Pillar](https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html)**
   추적성, 탐지, 최소 권한, incident response readiness와 연결된다.
 
-## Assessment 체크리스트
+## 적용 시 체크리스트
 
 - [ ] EKS control plane log type에 `audit`가 포함되어 있는가?
 - [ ] EKS control plane log type에 `authenticator`가 포함되어 있는가?

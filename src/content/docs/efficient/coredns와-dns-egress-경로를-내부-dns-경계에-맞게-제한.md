@@ -3,8 +3,6 @@ title: "CoreDNS와 DNS egress 경로를 내부 DNS 경계에 맞게 제한한다
 description: "Kubernetes 내부의 서비스 디스커버리는 DNS에 크게 의존한다. Pod는 보통 `api.team-a.svc.cluster.local`, `kubernetes.default.svc.cluster.local` 같은 이름을 질의하고, kubelet이 주입한 `/etc"
 phase: "Efficient"
 domain: "네트워크 보안"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 20
 sidebar:
   order: 20
@@ -42,7 +40,7 @@ nslookup example.com 1.1.1.1
   - Calico
 - 이 문서의 예시는 Amazon VPC CNI NetworkPolicy 기능을 기준으로 한다.
 
-### **Step 1: CoreDNS를 EKS managed add-on으로 관리한다**
+### Step 1: CoreDNS를 EKS managed add-on으로 관리한다
 
 CoreDNS는 클러스터 DNS 질의를 처리하는 핵심 컴포넌트다. EKS에서는 `coredns` add-on을 통해 CoreDNS 버전과 상태를 관리할 수 있다.
 
@@ -83,7 +81,7 @@ terraform -chdir=environments/infra plan
 terraform -chdir=environments/infra apply
 ```
 
-### **Step 2: VPC CNI NetworkPolicy 기능을 활성화한다**
+### Step 2: VPC CNI NetworkPolicy 기능을 활성화한다
 
 NetworkPolicy 리소스를 생성해도 CNI가 정책을 집행하지 않으면 트래픽은 차단되지 않는다. Amazon VPC CNI를 사용하는 경우 `enableNetworkPolicy`를 켜야 한다.
 
@@ -130,7 +128,7 @@ aws eks describe-addon \
 }
 ```
 
-### **Step 3: Namespace 단위 default deny egress를 적용한다**
+### Step 3: Namespace 단위 default deny egress를 적용한다
 
 DNS egress를 내부 DNS로 제한하려면 먼저 Namespace의 기본 egress를 차단해야 한다. 기본 차단 정책이 없으면 `allow-dns-egress`를 만들어도 외부 DNS 직접 질의는 계속 허용된다.
 
@@ -147,7 +145,7 @@ spec:
 
 이 정책은 Namespace 안의 모든 Pod를 선택하고, 허용 규칙이 없으므로 모든 egress를 차단한다.
 
-### **Step 4: CoreDNS로 향하는 DNS egress만 허용한다**
+### Step 4: CoreDNS로 향하는 DNS egress만 허용한다
 
 default deny 상태에서는 내부 서비스 이름 해석도 실패한다. 따라서 `kube-system` Namespace의 CoreDNS Pod로 향하는 TCP/UDP 53번만 허용한다.
 
@@ -182,7 +180,7 @@ kubectl apply -k manifests/overlays/team-d
 kubectl get networkpolicy -n team-d
 ```
 
-### **Step 5: 정책이 실제 endpoint로 변환되는지 확인한다**
+### Step 5: 정책이 실제 endpoint로 변환되는지 확인한다
 
 Amazon VPC CNI NetworkPolicy가 활성화되면 `aws-node` DaemonSet에 정책 집행용 node agent 컨테이너가 포함된다. 현재 EKS add-on 버전에 따라 컨테이너 이름은 `aws-eks-nodeagent`로 표시될 수 있다.
 
@@ -211,7 +209,7 @@ kubectl get policyendpoints -n team-d
 
 ## 검증 방법
 
-### **1. 취약 상태를 확인한다**
+### 1. 취약 상태를 확인한다
 
 정책이 없거나 정책 엔진이 동작하지 않으면 Pod가 외부 DNS 서버로 직접 질의할 수 있다.
 
@@ -238,7 +236,7 @@ Address: ...
 
 이 결과는 Pod가 CoreDNS를 우회해 외부 DNS 서버로 직접 나갈 수 있음을 의미한다.
 
-### **2. 내부 DNS 질의가 성공하는지 확인한다**
+### 2. 내부 DNS 질의가 성공하는지 확인한다
 
 정책 적용 후에도 Kubernetes Service DNS는 정상 동작해야 한다.
 
@@ -260,7 +258,7 @@ Name:           kubernetes.default.svc.cluster.local
 Address:        <kubernetes service ClusterIP>
 ```
 
-### **3. 외부 DNS 직접 질의가 차단되는지 확인한다**
+### 3. 외부 DNS 직접 질의가 차단되는지 확인한다
 
 짧게 실행되는 `kubectl run --rm ... nslookup` Pod는 NetworkPolicy가 endpoint에 반영되기 전에 질의를 끝낼 수 있다. 더 정확한 검증을 위해 오래 살아있는 테스트 Pod를 만들고, PolicyEndpoint 생성 이후 질의한다.
 
@@ -302,7 +300,7 @@ kubectl exec -n team-d dns-debug -- \
 kubectl delete pod dns-debug -n team-d
 ```
 
-### **4. CoreDNS와 VPC CNI 상태를 확인한다**
+### 4. CoreDNS와 VPC CNI 상태를 확인한다
 
 ```bash
 aws eks describe-addon \
@@ -346,7 +344,7 @@ kubectl -n kube-system logs -l k8s-app=aws-node \
 - **서비스 안정성 영향:** DNS egress를 잘못 차단하면 Kubernetes Service 이름 해석이 실패하여 애플리케이션 간 통신 장애가 발생할 수 있다.
 - **심각도:** **중간~높음** — 외부 DNS 직접 질의는 데이터 유출과 정책 우회의 시작점이 될 수 있다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -358,17 +356,6 @@ kubectl -n kube-system logs -l k8s-app=aws-node \
 
 고도화 단계에서는 Route 53 Resolver, Private Hosted Zone, Cilium FQDN policy를 조합해 도메인 기반 egress allowlist를 설계할 수 있다. 단, FQDN 정책은 DNS 질의와 실제 연결 IP의 일관성, TTL, 캐시 동작을 함께 고려해야 한다.
 
-## Assessment 체크리스트
-
-- [ ] CoreDNS가 EKS managed add-on으로 관리되고 `ACTIVE` 상태인가?
-- [ ] VPC CNI 또는 대체 CNI가 NetworkPolicy를 실제로 집행하는가?
-- [ ] `team-*` Namespace에 `default-deny-egress`가 적용되어 있는가?
-- [ ] DNS egress 허용 정책이 `kube-system`의 `k8s-app=kube-dns` Pod, TCP/UDP 53으로만 제한되어 있는가?
-- [ ] `PolicyEndpoint` 또는 CNI별 endpoint 정책 객체가 생성되는가?
-- [ ] `kubernetes.default.svc.cluster.local` 질의는 성공하는가?
-- [ ] `8.8.8.8`, `1.1.1.1` 직접 DNS 질의는 실패하거나 timeout 되는가?
-- [ ] CoreDNS 로그/메트릭으로 비정상 질의 증가를 확인할 수 있는가?
-
 ## 참고 자료
 
 - [Amazon EKS CoreDNS add-on](https://docs.aws.amazon.com/eks/latest/userguide/managing-coredns.html)
@@ -378,3 +365,19 @@ kubectl -n kube-system logs -l k8s-app=aws-node \
 - [Kubernetes DNS for Services and Pods](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/)
 - [Kubernetes NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
 
+
+## 연계된 보안 가이드라인 항목
+
+
+추후 업데이트 예정.
+
+## 적용 시 체크리스트
+
+- [ ] CoreDNS가 EKS managed add-on으로 관리되고 `ACTIVE` 상태인가?
+- [ ] VPC CNI 또는 대체 CNI가 NetworkPolicy를 실제로 집행하는가?
+- [ ] `team-*` Namespace에 `default-deny-egress`가 적용되어 있는가?
+- [ ] DNS egress 허용 정책이 `kube-system`의 `k8s-app=kube-dns` Pod, TCP/UDP 53으로만 제한되어 있는가?
+- [ ] `PolicyEndpoint` 또는 CNI별 endpoint 정책 객체가 생성되는가?
+- [ ] `kubernetes.default.svc.cluster.local` 질의는 성공하는가?
+- [ ] `8.8.8.8`, `1.1.1.1` 직접 DNS 질의는 실패하거나 timeout 되는가?
+- [ ] CoreDNS 로그/메트릭으로 비정상 질의 증가를 확인할 수 있는가?

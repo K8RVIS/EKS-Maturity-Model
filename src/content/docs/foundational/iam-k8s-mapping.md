@@ -3,8 +3,6 @@ title: "EKS 클러스터에 접속할 IAM 신분을 EKS Access Entries 방식으
 description: "EKS 클러스터에 접속하는 IAM 사용자 또는 IAM 역할은 Kubernetes API 서버에서 인증된 주체로 매핑되어야 한다. 기존에는 이 매핑을 `aws-auth` ConfigMap에 직접 작성하는 방식이 일반적이었다."
 phase: "Foundational"
 domain: "접근 제어"
-difficulty: "미정"
-owner: "공통 (전체 실습)"
 order: 20
 sidebar:
   order: 20
@@ -132,7 +130,7 @@ aws eks describe-cluster \
 "API_AND_CONFIG_MAP"
 ```
 
-## Step 3: 권한을 부여할 IAM Principal ARN을 확인한다
+### Step 3: 권한을 부여할 IAM Principal ARN을 확인한다
 
 Access Entry는 IAM 사용자 또는 IAM 역할 ARN을 기준으로 생성한다. 권한을 줄 대상의 ARN을 정확히 확인해야 한다.
 
@@ -161,7 +159,7 @@ arn:aws:iam::[account-id]:role/[iam-role명]
 
 운영 환경에서는 개별 IAM 사용자보다 IAM 역할을 기준으로 권한을 부여하는 방식을 우선 검토한다. 역할 기반 접근은 인력 변경, 임시 권한 부여, 감사 추적 측면에서 관리가 쉽다.
 
-## Step 4: Access Entry를 생성하고 AWS 관리형 Access Policy를 연결한다
+### Step 4: Access Entry를 생성하고 AWS 관리형 Access Policy를 연결한다
 
 확인한 IAM Principal ARN을 사용해 Access Entry를 생성한다.
 
@@ -265,7 +263,7 @@ aws eks associate-access-policy \
   --access-scope type=cluster
 ```
 
-## Step 6: Access Entry와 연결 정책을 조회한다
+### Step 5: Access Entry와 연결 정책을 조회한다
 
 클러스터에 등록된 Access Entry 목록을 확인한다.
 
@@ -300,7 +298,7 @@ aws eks list-associated-access-policies \
 
 운영 중인 클러스터에서 `aws-auth` ConfigMap을 먼저 삭제하거나 대량 수정하면 접근 장애가 발생할 수 있다. 따라서 Access Entries를 검증한 뒤 점진적으로 전환해야 한다.
 
-#### 검증 방법
+## 검증 방법
 
 권한을 부여받은 IAM 주체로 kubeconfig를 업데이트한 뒤 Kubernetes API 접근을 확인한다.
 
@@ -336,20 +334,10 @@ kubectl delete pod [pod명] -n [namespace명]
 - **영향 범위:** 클러스터 접근 불가, 불필요한 관리자 권한 부여, 감사 추적 어려움, 권한 회수 누락, Kubernetes 리소스 무단 변경 가능성
 - **심각도:** **높음**. 클러스터 인증과 관리자 접근 권한은 EKS 운영의 핵심 통제 지점이며, 잘못 관리되면 전체 클러스터의 통제권에 직접 영향을 준다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - **AWS 비용 발생 여부 및 예상 규모:** 없음. EKS Access Entries와 Access Policy 연결 자체에는 별도 비용이 발생하지 않는다.
 - **스픽스 vs 적용 도구 선택 및 비용 차이:** 필수 비용 없음. 대규모 환경에서는 Terraform, CloudFormation, AWS CDK 같은 IaC 도구로 Access Entry를 코드화하여 관리할 수 있다.
-
-## Assessment 체크리스트
-
-- [ ] 클러스터 인증 모드가 `API_AND_CONFIG_MAP`로 설정되어 있는가?
-- [ ] 권한을 부여할 IAM 사용자 또는 IAM 역할 ARN을 정확히 확인했는가?
-- [ ] IAM Principal별 Access Entry가 생성되어 있는가?
-- [ ] 각 Access Entry에 적절한 AWS 관리형 Access Policy가 연결되어 있는가?
-- [ ] 네임스페이스 범위 권한이 필요한 경우 `accessScope`가 `namespace`로 제한되어 있는가?
-- [ ] 클러스터 전체 권한이 필요한 경우 사유와 대상 IAM 역할이 명확한가?
-- [ ] 권한을 부여받은 IAM 주체로 실제 `kubectl` 접근 테스트를 수행했는가?
 
 ## 참고 자료
 
@@ -358,7 +346,7 @@ kubectl delete pod [pod명] -n [namespace명]
 - [Amazon EKS - Changing authentication mode](https://docs.aws.amazon.com/eks/latest/userguide/setting-up-access-entries.html)
 - [Amazon EKS Best Practices - Identity and Access Management](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html)
 
-## 연결된 보안 가이드라인 항목
+## 연계된 보안 가이드라인 항목
 
 이 항목은 아래 보안 기준과 직접 연결된다.
 
@@ -375,3 +363,13 @@ kubectl delete pod [pod명] -n [namespace명]
   `RBAC and least privilege`
   사용자와 역할에는 업무 수행에 필요한 최소 권한만 부여하고, 관리자 권한은 엄격히 제한할 것을 권고한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] 클러스터 인증 모드가 `API_AND_CONFIG_MAP`로 설정되어 있는가?
+- [ ] 권한을 부여할 IAM 사용자 또는 IAM 역할 ARN을 정확히 확인했는가?
+- [ ] IAM Principal별 Access Entry가 생성되어 있는가?
+- [ ] 각 Access Entry에 적절한 AWS 관리형 Access Policy가 연결되어 있는가?
+- [ ] 네임스페이스 범위 권한이 필요한 경우 `accessScope`가 `namespace`로 제한되어 있는가?
+- [ ] 클러스터 전체 권한이 필요한 경우 사유와 대상 IAM 역할이 명확한가?
+- [ ] 권한을 부여받은 IAM 주체로 실제 `kubectl` 접근 테스트를 수행했는가?

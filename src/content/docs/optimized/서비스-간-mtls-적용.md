@@ -3,8 +3,6 @@ title: "서비스 간 mTLS를 적용한다"
 description: "Ingress 또는 Load Balancer에서 TLS를 강제해도 클러스터 내부 Pod 간 통신은 여전히 평문일 수 있다. 공격자가 취약한 Pod, 노드, 디버그 컨테이너, 과도한 권한의 DaemonSet을 확보하면 같은 클러스터 내부의 east-west 트래픽을 관찰"
 phase: "Optimized"
 domain: "네트워크 보안"
-difficulty: "★★★"
-owner: "공통 (전체 실습)"
 order: 20
 sidebar:
   order: 20
@@ -32,7 +30,7 @@ mTLS는 단순 암호화가 아니라 양쪽 workload가 서로의 신원을 검
 - 서비스별 Namespace, ServiceAccount, 호출 관계가 정리되어 있어야 한다.
 - 전면 강제 전에 민감 Namespace 하나를 선정해 관측 모드로 시작한다.
 
-### **Step 1: 적용 방식을 결정한다**
+### Step 1: 적용 방식을 결정한다
 
 EKS에서 Pod 간 mTLS는 현실적으로 Service Mesh를 통해 적용하는 경우가 가장 많다. 현재 기준으로는 **Istio를 기본 권고안**으로 둔다.
 
@@ -48,7 +46,7 @@ EKS에서 Pod 간 mTLS는 현실적으로 Service Mesh를 통해 적용하는 �
 
 **결론:** 지금 이 성숙도 모델의 기준 통제에는 **Istio 기반 mTLS를 우선 적용**한다. 이유는 mTLS 강제, 점진 도입, plaintext 차단 검증, L7 `AuthorizationPolicy`까지 한 번에 운영 표준으로 만들기 쉽기 때문이다. Cilium mTLS는 Cilium 기반 네트워크 정책과 Hubble 관측성을 이미 채택한 클러스터에서 별도 파일럿 항목으로 검증한다.
 
-### **Step 2: 대상 Namespace를 관측 모드로 메시 편입한다**
+### Step 2: 대상 Namespace를 관측 모드로 메시 편입한다
 
 먼저 민감 서비스 Namespace를 하나 정한다. 예시는 `payments`다.
 
@@ -82,7 +80,7 @@ spec:
 kubectl apply -f manifests/security/istio/payments-peerauthentication-permissive.yaml
 ```
 
-### **Step 3: Namespace 단위 mTLS STRICT를 적용한다**
+### Step 3: Namespace 단위 mTLS STRICT를 적용한다
 
 관측 기간 동안 비메시 workload, 헬스체크, 배치 작업, 외부 연동 호출을 정리한 뒤 `STRICT`로 전환한다.
 
@@ -104,7 +102,7 @@ kubectl get peerauthentication -n payments default -o yaml
 
 `STRICT` 모드에서는 sidecar 또는 ambient mesh에 편입되지 않은 plain client가 해당 Namespace의 workload로 직접 호출할 수 없어야 한다.
 
-### **Step 4: 인가 정책을 함께 적용한다**
+### Step 4: 인가 정책을 함께 적용한다
 
 mTLS는 “호출자가 누구인지”를 검증하지만, 그 호출자가 “무엇을 해도 되는지”까지 자동으로 정하지는 않는다. 민감 서비스에는 default-deny `AuthorizationPolicy`를 먼저 두고 필요한 호출만 허용한다.
 
@@ -141,7 +139,7 @@ spec:
 kubectl apply -f manifests/security/istio/payments-authorizationpolicy.yaml
 ```
 
-### **Step 5: 혼재 구간 예외를 관리한다**
+### Step 5: 혼재 구간 예외를 관리한다
 
 비메시 workload와의 혼재 구간에서는 예외를 문서화하고 만료일을 둔다.
 
@@ -152,7 +150,7 @@ kubectl apply -f manifests/security/istio/payments-authorizationpolicy.yaml
 
 ## 검증 방법
 
-### **1. 취약점이 열려있는지 확인한다**
+### 1. 취약점이 열려있는지 확인한다
 
 다음 명령어 세트는 “서비스 간 mTLS가 없거나 강제되지 않아 내부 평문 호출이 가능한 상태”인지 확인한다.
 
@@ -207,7 +205,7 @@ istioctl analyze -A
 
 취약하거나 불완전한 상태에서는 대상 서비스가 `DISABLE`, `PERMISSIVE`, `CONFLICT`, `UNKNOWN`처럼 표시되거나, proxy sync 문제가 나타날 수 있다.
 
-### **2. 적용 후 상태를 검증한다**
+### 2. 적용 후 상태를 검증한다
 
 다음 명령어 세트는 mTLS 강제와 인가 정책이 기대대로 동작하는지 확인한다.
 
@@ -285,7 +283,7 @@ kubectl exec -n checkout rogue-client -- \
 
 기대 결과는 `403` 또는 요청 차단이다. 같은 Namespace에 있더라도 허용된 ServiceAccount principal이 아니면 민감 서비스에 접근할 수 없어야 한다.
 
-### **3. Cilium mTLS 파일럿을 검증할 때의 추가 명령어**
+### 3. Cilium mTLS 파일럿을 검증할 때의 추가 명령어
 
 Cilium 기반 파일럿을 수행하는 경우에는 먼저 Cilium mutual authentication이 활성화되어 있는지 확인한다.
 
@@ -342,7 +340,7 @@ Cilium mTLS는 현재 Beta 제약을 전제로 검증한다. 운영 강제 통�
 - **영향 범위:** 민감 데이터 유출, 결제/계정 기능 오남용, 내부 API 남용, 사고 원인 분석 지연.
 - **심각도:** **높음**
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -351,16 +349,6 @@ Cilium mTLS는 현재 Beta 제약을 전제로 검증한다. 운영 강제 통�
 | AWS 추가 비용 | Istio 자체는 오픈소스이나 proxy/telemetry 리소스만큼 노드 비용이 증가할 수 있다. ACM Private CA를 루트 CA로 연동하면 Private CA 비용이 별도 발생한다. |
 | 도구 비용 | Istio, Cilium, Linkerd는 오픈소스 사용 가능. 운영 대시보드, 장기 로그/메트릭 저장소 비용은 별도 산정한다. |
 | 운영 부담 | 인증서/CA 운영, proxy 리소스, 정책 예외 관리, 장애 시 mesh 우회 절차를 운영 표준에 포함해야 한다. |
-
-## Assessment 체크리스트
-
-- [ ] 민감 Namespace에 mTLS `STRICT` 정책이 적용되어 있는가?
-- [ ] 비메시 plain client가 민감 서비스로 직접 호출할 수 없는가?
-- [ ] 허용된 mesh client만 정상 호출에 성공하는가?
-- [ ] `AuthorizationPolicy` default-deny와 필요한 allow 정책이 함께 적용되어 있는가?
-- [ ] `PERMISSIVE`, port-level disable, workload-level 예외에 소유자와 만료일이 있는가?
-- [ ] telemetry에서 민감 서비스 호출의 mTLS 적용 상태를 확인할 수 있는가?
-- [ ] Cilium mTLS를 검토하는 경우 Beta 제약과 SPIRE 운영 요건을 명시했는가?
 
 ## 참고 자료
 
@@ -373,3 +361,18 @@ Cilium mTLS는 현재 Beta 제약을 전제로 검증한다. 운영 강제 통�
 - [Automatic mTLS with Linkerd](https://linkerd.io/2/features/automatic-mtls/)
 - [Linkerd Authorization Policy](https://linkerd.io/2/features/server-policy/)
 
+
+## 연계된 보안 가이드라인 항목
+
+
+추후 업데이트 예정.
+
+## 적용 시 체크리스트
+
+- [ ] 민감 Namespace에 mTLS `STRICT` 정책이 적용되어 있는가?
+- [ ] 비메시 plain client가 민감 서비스로 직접 호출할 수 없는가?
+- [ ] 허용된 mesh client만 정상 호출에 성공하는가?
+- [ ] `AuthorizationPolicy` default-deny와 필요한 allow 정책이 함께 적용되어 있는가?
+- [ ] `PERMISSIVE`, port-level disable, workload-level 예외에 소유자와 만료일이 있는가?
+- [ ] telemetry에서 민감 서비스 호출의 mTLS 적용 상태를 확인할 수 있는가?
+- [ ] Cilium mTLS를 검토하는 경우 Beta 제약과 SPIRE 운영 요건을 명시했는가?

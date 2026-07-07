@@ -3,8 +3,6 @@ title: "Break-glass 감사 자동화를 통해 긴급 관리자 접근을 JIT로
 description: "Break-glass 접근은 장애 대응이나 긴급 보안 조치처럼 평상시 권한으로는 해결하기 어려운 상황에서 사용하는 예외적 관리자 접근이다. 하지만 break-glass Role을 상시 관리자 권한으로 열어두면 권한 오남용, 계정 탈취, 추적 누락 위험이 커진다."
 phase: "Optimized"
 domain: "접근 제어"
-difficulty: "미정"
-owner: "공통 (전체 실습)"
 order: 10
 sidebar:
   order: 10
@@ -432,14 +430,36 @@ aws cloudwatch describe-alarms `
 - **운영 리스크:** 자동 회수 Lambda 또는 Scheduler 권한이 잘못 구성되면 TTL 이후에도 권한이 남을 수 있다.
 - **감사 리스크:** CloudTrail과 EKS audit log가 없으면 AWS Role 사용과 Kubernetes 내부 행위를 연결해 설명하기 어렵다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - **AWS 비용 발생 요소:** CloudWatch Logs 저장 비용, CloudWatch Metric/Alarm 비용, DynamoDB 소량 사용 비용, Lambda 호출 비용, EventBridge Scheduler 비용, SNS Email 발송 비용이 발생할 수 있다.
 - **예상 비용 규모:** 실습 수준에서는 매우 작지만, EKS audit log는 이벤트 양에 따라 CloudWatch Logs 비용이 증가할 수 있다.
 - **운영 부담:** trusted principal ARN, 승인자, TTL, 사후 리뷰 절차를 지속적으로 관리해야 한다.
 - **자동화 필요성:** 운영 환경에서는 수동 grant보다 승인 workflow, 티켓 시스템, Slack/SIEM 연동까지 연결하는 것이 적합하다.
 
-## Assessment 체크리스트
+## 참고 자료
+
+- [Amazon EKS Control Plane Logging](https://docs.aws.amazon.com/eks/latest/userguide/control-plane-logs.html)
+- [AWS CloudTrail User Guide](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html)
+- [Amazon EventBridge Scheduler](https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html)
+- [Kubernetes Auditing](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/)
+- [Amazon EKS Best Practices - Identity and Access Management](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html)
+
+## 연계된 보안 가이드라인 항목
+
+이 항목은 아래 보안 기준과 직접 연결된다.
+
+- **CIS Kubernetes Benchmark**
+  `cluster-admin` 권한은 필요한 경우에만 제한적으로 사용해야 하며, 상시 관리자 권한을 최소화해야 한다.
+- **AWS EKS Best Practices - IAM**
+  관리 권한은 최소 권한과 감사 가능성을 기준으로 분리하고, 임시 권한 사용을 권장한다.
+- **NSA/CISA Kubernetes Hardening Guidance**
+  관리자 접근은 강한 인증, 감사 로깅, 최소 권한, 사후 검토 절차와 함께 운영해야 한다.
+- **NIST SP 800-53**
+  비상 접근 계정은 승인, 모니터링, 사용 후 검토, 권한 회수 절차를 갖춰야 한다.
+
+
+## 적용 시 체크리스트
 
 - [ ] break-glass Role이 사전에 생성되어 있는가?
 - [ ] break-glass Role trust policy가 지정된 SSO Reserved Role만 허용하는가?
@@ -454,25 +474,3 @@ aws cloudwatch describe-alarms `
 - [ ] EKS control plane `api`, `audit`, `authenticator` 로그가 CloudWatch Logs로 수집되는가?
 - [ ] 고위험 Kubernetes API 요청이 Metric Filter/Alarm으로 탐지되는가?
 - [ ] 사후 리뷰에 요청자, 승인자, 사유, 작업 내역, 회수 여부, 정탐/오탐 분류가 기록되는가?
-
-## 참고 자료
-
-- [Amazon EKS Control Plane Logging](https://docs.aws.amazon.com/eks/latest/userguide/control-plane-logs.html)
-- [AWS CloudTrail User Guide](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html)
-- [Amazon EventBridge Scheduler](https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html)
-- [Kubernetes Auditing](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/)
-- [Amazon EKS Best Practices - Identity and Access Management](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html)
-
-## 연결된 보안 가이드라인 항목
-
-이 항목은 아래 보안 기준과 직접 연결된다.
-
-- **CIS Kubernetes Benchmark**
-  `cluster-admin` 권한은 필요한 경우에만 제한적으로 사용해야 하며, 상시 관리자 권한을 최소화해야 한다.
-- **AWS EKS Best Practices - IAM**
-  관리 권한은 최소 권한과 감사 가능성을 기준으로 분리하고, 임시 권한 사용을 권장한다.
-- **NSA/CISA Kubernetes Hardening Guidance**
-  관리자 접근은 강한 인증, 감사 로깅, 최소 권한, 사후 검토 절차와 함께 운영해야 한다.
-- **NIST SP 800-53**
-  비상 접근 계정은 승인, 모니터링, 사용 후 검토, 권한 회수 절차를 갖춰야 한다.
-

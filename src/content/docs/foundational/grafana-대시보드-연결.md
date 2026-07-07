@@ -3,8 +3,6 @@ title: "Grafana로 클러스터 메트릭을 시각화한다"
 description: "**Prometheus 메트릭 수집 기반 구성** 단계에서 Prometheus가 메트릭을 수집하더라도, 숫자로만 나열된 시계열 데이터는 사람이 빠르게 판단하기 어렵다. 보안 이상 징후는 수치의 변화 패턴에서 드러나는 경우가 많다. API 서버 4xx 오류가 갑자기 급증"
 phase: "Foundational"
 domain: "Pod 보안"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 90
 sidebar:
   order: 90
@@ -196,7 +194,7 @@ Grafana UI → Configuration → Data Sources → Prometheus → Test
 
 ---
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -204,16 +202,6 @@ Grafana UI → Configuration → Data Sources → Prometheus → Test
 | AWS 추가 비용 | Grafana PVC용 EBS GP3 스토리지 비용 발생 (5Gi 기준 약 월 $0.5) |
 | 도구 비용 | Grafana OSS는 무료. 엔터프라이즈 기능이 필요하면 Grafana Cloud 또는 Amazon Managed Grafana 검토 |
 | 운영 고려사항 | 관리자 비밀번호를 환경변수로 주입하면 CI/CD 파이프라인에서 Secrets 관리가 필요하다. AWS Secrets Manager 또는 SSM Parameter Store 연동을 검토한다. |
-
----
-
-## Assessment 체크리스트
-
-- [ ] Grafana Pod가 `Running` 상태인가?
-- [ ] Grafana PVC가 `Bound`(gp3-encrypted)인가?
-- [ ] Grafana UI 로그인이 가능한가?
-- [ ] Prometheus 데이터소스가 정상 연결(`Data source is working`)되어 있는가?
-- [ ] `grafana_admin_password`가 코드에 하드코딩되지 않고 환경변수로 주입되는가?
 
 ---
 
@@ -237,3 +225,13 @@ Grafana UI → Configuration → Data Sources → Prometheus → Test
 - **AWS EKS Best Practices**
   Amazon Managed Grafana 또는 자체 Grafana를 통해 클러스터 메트릭을 시각화하고 이상 탐지 대시보드를 운영하도록 권장한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] Grafana Pod가 `Running` 상태인가?
+- [ ] Grafana PVC가 `Bound`(gp3-encrypted)인가?
+- [ ] Grafana UI 로그인이 가능한가?
+- [ ] Prometheus 데이터소스가 정상 연결(`Data source is working`)되어 있는가?
+- [ ] `grafana_admin_password`가 코드에 하드코딩되지 않고 환경변수로 주입되는가?
+
+---

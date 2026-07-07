@@ -3,8 +3,6 @@ title: "Pod 연계 external Secret storage를 사용한다"
 description: "애플리케이션 코드, 컨테이너 이미지, Helm values, Kubernetes 매니페스트, CI/CD 변수에 비밀번호, 토큰, API Key 같은 시크릿 값이 직접 들어가 있으면 한 번의 커밋이나 이미지 빌드만으로 장기간 노출이 지속된다. Git 히스토리, 이미지 레"
 phase: "Quick Wins"
 domain: "데이터 보호"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 30
 sidebar:
   order: 30
@@ -33,7 +31,7 @@ Kubernetes 문서와 EKS 보안 가이드는 민감정보를 일반 설정값처
 - 이미 Git이나 이미지 레이어에 들어간 기존 하드코딩 시크릿 값은 노출된 것으로 간주하고 삭제 전에 새 값으로 변경하여 적용할 필요가 있다.
 - 현 단계에서는 암호 자동 로테이션 적용을 고려하지 않고 진행한다.
 
-### **Step 1: 하드코딩된 시크릿 위치를 식별한다**
+### Step 1: 하드코딩된 시크릿 위치를 식별한다
 
 소스코드와 배포 파일 전체에서 시크릿 후보를 검색한다.
 
@@ -63,7 +61,7 @@ rg -n --hidden 'password|secret|token|api[_-]?key' \
   .
 ```
 
-### **Step 2: 시크릿 원본을 AWS 관리형 저장소로 이동한다**
+### Step 2: 시크릿 원본을 AWS 관리형 저장소로 이동한다
 
 민감한 값 자체는 Git에 두지 않고 Secrets Manager 또는 Parameter Store에 저장한다.
 
@@ -89,7 +87,7 @@ aws secretsmanager create-secret \
 
 이미 노출된 `training-password`, `training-external-password` 같은 값은 저장소로 옮기는 것만으로 충분하지 않다. 따라서 새 값으로 로테이션하고, 기존 값은 폐기해야 한다.
 
-### **Step 3: Pod 주입 방식을 선택한다**
+### Step 3: Pod 주입 방식을 선택한다
 
 EKS 워크로드에서는 다음 두 방식을 주로 사용한다.
 
@@ -135,7 +133,7 @@ kubectl get crd clustersecretstores.external-secrets.io
 
 ESO controller 배포가 정상 완료되고, ExternalSecret, SecretStore, ClusterSecretStore CRD를 사용할 수 있다.
 
-### **Step 4: IRSA 또는 Pod Identity로 최소 권한을 부여한다**
+### Step 4: IRSA 또는 Pod Identity로 최소 권한을 부여한다
 
 ESO를 사용하는 경우 ESO controller의 ServiceAccount에 필요한 Secret ARN만 읽을 수 있는 권한을 연결한다. 권한은 wildcard를 넓게 열지 않고 네임스페이스나 애플리케이션 경로 단위로 제한한다.
 
@@ -160,7 +158,7 @@ ESO를 사용하는 경우 ESO controller의 ServiceAccount에 필요한 Secret 
 
 Secrets Manager가 customer managed KMS key를 사용한다면 해당 key에 대한 `kms:Decrypt` 권한도 필요하다.
 
-### **Step 5: ExternalSecret으로 Kubernetes Secret을 생성한다**
+### Step 5: ExternalSecret으로 Kubernetes Secret을 생성한다
 
 ESO를 기준으로 SecretStore와 ExternalSecret을 선언한다.
 
@@ -204,7 +202,7 @@ spec:
         property: password
 ```
 
-### **Step 6: 워크로드에는 값 대신 참조만 남긴다**
+### Step 6: 워크로드에는 값 대신 참조만 남긴다
 
 평문 `value`를 제거하고 `secretKeyRef` 또는 파일 마운트로 변경한다.
 
@@ -226,7 +224,7 @@ env:
 
 가능하면 연결 문자열 전체를 평문으로 만들지 말고, 애플리케이션이 host, port, username, password를 분리된 환경변수나 파일에서 읽도록 수정한다. 환경변수는 Pod spec과 프로세스 환경에 노출될 수 있으므로, 고위험 시크릿은 파일 마운트 방식이나 애플리케이션 SDK 기반 조회를 우선 검토한다.
 
-### **Step 7: Git 히스토리와 이미지 레이어 오염을 처리한다**
+### Step 7: Git 히스토리와 이미지 레이어 오염을 처리한다
 
 이미 실제 운영 시크릿이 커밋되었거나 이미지에 들어갔다면 다음을 수행한다.
 
@@ -321,7 +319,7 @@ kubectl logs deploy/api -n <namespace> --tail=100
 - **운영 장애:** 시크릿을 수동으로 여러 values 파일에 복사하면 환경별 값 불일치, 잘못된 운영 비밀번호 배포, 로테이션 누락이 발생하기 쉽다.
 - **심각도:** **높음**. 하드코딩된 시크릿은 데이터 유출과 권한 탈취로 직접 이어질 수 있으며, 사후 정리 비용이 크다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - **AWS 비용 발생 여부 및 예상 규모:** Secrets Manager는 시크릿 수와 API 호출량에 따라 비용이 발생한다. Parameter Store SecureString은 사용 tier와 KMS 호출량에 따라 비용이 발생할 수 있다. KMS customer managed key를 사용하면 key 보관 및 API 호출 비용도 고려한다.
 - **오픈소스 도구 비용:** External Secrets Operator와 Secrets Store CSI Driver 자체는 오픈소스이며 별도 라이선스 비용은 없다. 다만 controller 운영, 업그레이드, 모니터링에 플랫폼 운영 시간이 필요하다.
@@ -352,7 +350,7 @@ kubectl logs deploy/api -n <namespace> --tail=100
 - **[CIS Kubernetes Benchmark](https://www.cisecurity.org/benchmark/kubernetes)**
   Secret 접근 권한 최소화, etcd 암호화, 서비스 계정 권한 관리와 연결된다.
 
-## Assessment 체크리스트
+## 적용 시 체크리스트
 
 - [ ] 애플리케이션 코드와 테스트 코드에 실제 비밀번호, token, API Key가 남아 있지 않는가?
 - [ ] Kubernetes 매니페스트, Helm values, Kustomize patch에 평문 시크릿 값이 없는가?

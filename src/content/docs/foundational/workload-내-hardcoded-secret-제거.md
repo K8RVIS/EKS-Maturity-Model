@@ -3,8 +3,6 @@ title: "Workload 내 Hardcoded Secret을 탐지하고 Secrets Manager 참조로 
 description: "Kubernetes 매니페스트, Kustomize patch, Helm values, Terraform 변수 파일, 애플리케이션 설정 파일, CI/CD 변수에 비밀번호나 토큰을 직접 적어두면 Git 히스토리, Argo CD diff, CI 로그, 이미지 레이어에 값이 "
 phase: "Foundational"
 domain: "데이터 보호"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 70
 sidebar:
   order: 70
@@ -47,7 +45,7 @@ Foundational 단계에서는 단순히 눈으로 `password` 문자열을 찾는 
 - 이미 Git, CI 로그, 이미지 레이어에 들어간 값은 노출된 것으로 보고 새 값으로 로테이션해야 한다.
 - 스캔 결과와 JSON 리포트에는 실제 값이 마스킹되더라도 민감한 파일 경로와 context가 포함될 수 있으므로 보관 위치를 제한한다.
 
-### **Step 1: 스캔 범위와 제외 범위를 정한다**
+### Step 1: 스캔 범위와 제외 범위를 정한다
 
 먼저 저장소 루트에서 기본 스캔을 실행한다.
 
@@ -81,7 +79,7 @@ python scripts/scan_secrets.py . \
   --fail-on high
 ```
 
-### **Step 2: 탐지 결과를 분류한다**
+### Step 2: 탐지 결과를 분류한다
 
 JSON 출력은 CI, PR comment, 보안 리포트에 연결하기 쉽다.
 
@@ -120,7 +118,7 @@ python scripts/scan_secrets.py . \
 
 `--enable-entropy`는 무작위 문자열 탐지에 유용하지만 오탐이 늘 수 있다. 처음에는 수동 검토나 야간 점검에 사용하고, allowlist가 정리된 뒤 CI에 포함한다.
 
-### **Step 3: 오탐은 allowlist로 관리한다**
+### Step 3: 오탐은 allowlist로 관리한다
 
 placeholder, template, Terraform reference, Kubernetes Secret reference, ARN/path/name 같은 메타데이터는 스캐너가 기본적으로 최대한 제외하도록 설계되어 있다. 그래도 오탐이 발생하면 inline 무시 주석이나 allowlist 파일로 관리한다.
 
@@ -151,7 +149,7 @@ python scripts/scan_secrets.py . \
 
 `--show-secrets`는 실제 값을 출력하므로 CI, PR, 공유 터미널에서는 사용하지 않는다. 격리된 로컬 환경에서 원인 분석이 꼭 필요할 때만 제한적으로 사용한다.
 
-### **Step 4: 실제 값은 즉시 로테이션한다**
+### Step 4: 실제 값은 즉시 로테이션한다
 
 스캐너가 실제 Secret을 찾았다면 파일에서 제거하기 전에 먼저 값을 폐기하거나 새 값으로 교체한다.
 
@@ -164,7 +162,7 @@ python scripts/scan_secrets.py . \
 
 Git에서 값을 삭제하는 것만으로는 충분하지 않다. 이미 Git 히스토리, CI 로그, 이미지 레이어에 남았을 수 있으므로 로테이션이 먼저다.
 
-### **Step 5: Secret 원본을 AWS Secrets Manager로 이동한다**
+### Step 5: Secret 원본을 AWS Secrets Manager로 이동한다
 
 민감한 값 자체는 Git에 두지 않고 AWS Secrets Manager에 저장한다. namespace별 워크로드라면 path에 namespace를 포함해 권한과 감사를 나누기 쉽게 한다.
 
@@ -193,7 +191,7 @@ done
 
 Terraform으로 Secrets Manager Secret 자체를 만들 수는 있지만, `secret_string`을 Terraform에 직접 넣으면 state에 민감 값이 저장될 수 있다. 운영에서는 Secret metadata와 IAM policy는 Terraform으로 관리하고, 실제 Secret value는 안전한 CI/CD secret, 수동 break-glass 절차, rotation Lambda, 또는 제한된 AWS CLI 경로로 주입하는 편이 안전하다.
 
-### **Step 6: Pod가 필요한 Secret만 읽도록 권한을 부여한다**
+### Step 6: Pod가 필요한 Secret만 읽도록 권한을 부여한다
 
 External Secrets Operator를 사용하는 경우 ESO controller 또는 namespace별 ServiceAccount가 필요한 Secret ARN만 읽을 수 있게 한다.
 
@@ -228,7 +226,7 @@ External Secrets Operator를 사용하는 경우 ESO controller 또는 namespace
 
 Secrets Manager가 customer managed KMS key를 사용한다면 `kms:Decrypt` 권한도 key policy와 IAM policy에 반영한다.
 
-### **Step 7: ExternalSecret으로 Kubernetes Secret을 동기화한다**
+### Step 7: ExternalSecret으로 Kubernetes Secret을 동기화한다
 
 기존 애플리케이션이 환경변수 기반으로 Secret을 읽는다면 External Secrets Operator가 전환 비용이 낮다. Secrets Manager를 원본으로 두고 Kubernetes Secret은 런타임 주입을 위한 동기화 대상으로만 사용한다.
 
@@ -284,7 +282,7 @@ spec:
 
 팀 namespace가 늘어나는 환경에서는 Helm, Kustomize generator, Terraform `for_each`, Argo CD ApplicationSet 중 하나로 namespace별 `ExternalSecret`을 반복 생성한다.
 
-### **Step 8: 워크로드 매니페스트에서 실제 값을 제거한다**
+### Step 8: 워크로드 매니페스트에서 실제 값을 제거한다
 
 탐지된 `env[].value`, `stringData`, Terraform variable default를 제거하고 `secretKeyRef` 또는 CSI mount 참조로 바꾼다.
 
@@ -341,7 +339,7 @@ spec:
 
 가능하면 connection string 전체를 Secret으로 만들기보다 host, port, database, username, password를 분리한다. 기존 애플리케이션이 `REDIS_URL`만 읽을 수 있다면 초기 전환에서는 URL을 Secret으로 동기화하고, 이후 앱 코드를 개선해 password 분리 주입으로 전환한다.
 
-### **Step 9: 스캐너를 CI와 PR gate에 연결한다**
+### Step 9: 스캐너를 CI와 PR gate에 연결한다
 
 하드코딩 Secret 제거는 한 번의 정리보다 재유입 방지가 더 중요하다. PR마다 스캐너를 실행해 high 이상 결과를 차단한다.
 
@@ -372,7 +370,7 @@ jobs:
 
 CI 로그에는 실제 값을 출력하지 않는다. `--show-secrets`는 사용하지 않고, 필요한 경우 JSON 결과를 보안 접근이 제한된 artifact로만 보관한다.
 
-### **Step 10: 기존 노출 흔적을 정리한다**
+### Step 10: 기존 노출 흔적을 정리한다
 
 실제 운영 Secret이 커밋되었거나 이미지에 들어갔다면 다음 작업을 수행한다.
 
@@ -509,7 +507,7 @@ aws cloudtrail lookup-events \
 - **운영 리스크:** allowlist를 느슨하게 운영하면 실제 Secret이 예외 처리될 수 있고, 반대로 entropy 탐지를 무리하게 CI에 적용하면 오탐으로 개발 흐름이 막힐 수 있다.
 - **심각도:** **높음**. 하드코딩 Secret은 데이터 유출과 권한 탈취로 직접 이어지며, 발견 후에도 로테이션과 히스토리 정리 비용이 크다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - **AWS 비용 발생 여부 및 예상 규모:** Secrets Manager는 Secret 수와 API 호출량에 따라 비용이 발생한다. Parameter Store SecureString을 대안으로 사용할 수 있지만 로테이션과 운영 기능 차이를 고려해야 한다.
 - **KMS 비용:** customer managed KMS key를 사용하면 key 월 비용과 API 호출 비용이 발생할 수 있다.
@@ -547,7 +545,7 @@ aws cloudtrail lookup-events \
 - **[NIST SP 800-53 Rev.5](https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final)**
   `AC-6`, `IA-5`, `SC-28`, `SI-4`와 연결된다.
 
-## Assessment 체크리스트
+## 적용 시 체크리스트
 
 - [ ] 스크립트 파일을 저장소 전체 또는 지정된 IaC/manifest 경로에 실행했는가?
 - [ ] CI에서 `--fail-on high` 기준으로 하드코딩 Secret 재유입을 차단하는가?

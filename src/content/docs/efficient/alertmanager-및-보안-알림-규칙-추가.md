@@ -3,8 +3,6 @@ title: "AlertManager 및 보안 알림 규칙을 추가한다"
 description: "**보안 메트릭 대시보드 구성** 단계에서 구성한 대시보드는 운영자가 직접 화면을 보고 있어야 이상 징후를 인식할 수 있다. 하지만 보안 이벤트는 새벽, 주말, 휴가 중에도 발생한다. 대시보드만으로는 실시간 대응이 불가능하다."
 phase: "Efficient"
 domain: "Pod 보안"
-difficulty: "★★☆"
-owner: "장해윤"
 order: 50
 sidebar:
   order: 50
@@ -283,7 +281,7 @@ curl -s "http://localhost:9090/api/v1/query?query=kube_resourcequota{resource=\"
 
 ---
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -291,16 +289,6 @@ curl -s "http://localhost:9090/api/v1/query?query=kube_resourcequota{resource=\"
 | AWS 추가 비용 | AlertManager PVC용 EBS GP3 스토리지 비용 발생 (2Gi 기준 약 월 $0.2). 이메일 알림은 SNS 연동 시 추가 비용 가능 |
 | 도구 비용 | AlertManager는 오픈소스. PagerDuty, OpsGenie 등 상용 On-Call 도구 연동 시 별도 비용 발생 |
 | 운영 고려사항 | 초기에는 알림이 과다 발생할 수 있다. `for` 지속 시간과 임계값을 실제 워크로드 패턴에 맞게 조정하고, 알림 그룹화(grouping)와 억제(inhibit) 규칙을 설정해 알림 피로를 방지한다. |
-
----
-
-## Assessment 체크리스트
-
-- [ ] AlertManager Pod가 `Running` 상태이고 PVC가 `Bound`(gp3-encrypted)인가?
-- [ ] `eks-security-alerts` PrometheusRule이 등록되어 있는가?
-- [ ] Prometheus Alerts UI에서 5개 규칙(`HighAPIServer4xxRate`, `HighPodRestartCount`, `TooManyPendingPods`, `HighCPUQuotaUsage`, `HighMemoryQuotaUsage`)이 모두 표시되는가?
-- [ ] **보안 메트릭 대시보드 구성** 임계값과 PrometheusRule 임계값이 일치하는가?
-- [ ] AlertManager 수신처(receiver)가 설정되어 알림이 실제 발송되는가?
 
 ---
 
@@ -325,3 +313,13 @@ curl -s "http://localhost:9090/api/v1/query?query=kube_resourcequota{resource=\"
 - **AWS EKS Best Practices**
   Prometheus AlertManager와 연동해 임계값 기반 알림을 구성하고, SNS, PagerDuty, Slack 등 외부 수신처와 통합해 실시간 대응 체계를 갖추도록 권장한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] AlertManager Pod가 `Running` 상태이고 PVC가 `Bound`(gp3-encrypted)인가?
+- [ ] `eks-security-alerts` PrometheusRule이 등록되어 있는가?
+- [ ] Prometheus Alerts UI에서 5개 규칙(`HighAPIServer4xxRate`, `HighPodRestartCount`, `TooManyPendingPods`, `HighCPUQuotaUsage`, `HighMemoryQuotaUsage`)이 모두 표시되는가?
+- [ ] **보안 메트릭 대시보드 구성** 임계값과 PrometheusRule 임계값이 일치하는가?
+- [ ] AlertManager 수신처(receiver)가 설정되어 알림이 실제 발송되는가?
+
+---

@@ -3,8 +3,6 @@ title: "EBS 기반 Workload Storage data를 보호한다"
 description: "EKS에서 애플리케이션 데이터는 컨테이너 파일시스템에만 머무르지 않는다. Redis, PostgreSQL, 메시지 큐, 업로드 파일, 캐시 데이터처럼 지속성이 필요한 데이터는 `PersistentVolumeClaim(PVC)`을 통해 EBS, EFS 같은 외부 스토리지"
 phase: "Foundational"
 domain: "데이터 보호"
-difficulty: "★☆☆"
-owner: "남윤겸, 최은소"
 order: 60
 sidebar:
   order: 60
@@ -40,7 +38,7 @@ EBS 볼륨은 생성 시점의 암호화 설정이 중요하다. `StorageClass`�
 - AWS CLI로 `ec2:GetEbsEncryptionByDefault`, `ec2:DescribeVolumes`, 필요한 경우 KMS key 정보를 조회할 수 있어야 한다.
 - GitOps 또는 Kustomize 기반 환경이라면 live 리소스를 직접 패치하기보다 원본 매니페스트를 우선 수정한다.
 
-### **Step 1: 기존 워크로드 저장소 사용 현황을 확인한다**
+### Step 1: 기존 워크로드 저장소 사용 현황을 확인한다
 
 먼저 기존 워크로드가 어떤 PVC를 사용하고, 어떤 StorageClass에 연결되어 있는지 확인한다.
 
@@ -72,7 +70,7 @@ kubectl get statefulset db -n <namespace> -o yaml \
 - 이미 생성된 PV의 실제 EBS 볼륨이 `Encrypted: false`다.
 - 민감 데이터를 저장하는 StatefulSet이 비암호화 또는 불명확한 StorageClass를 사용한다.
 
-### **Step 2: EBS 기본 암호화 상태를 확인한다**
+### Step 2: EBS 기본 암호화 상태를 확인한다
 
 AWS 계정/리전 단위 EBS 기본 암호화(`EBS encrypted by default`)는 중요한 안전망이다. 하지만 매니페스트의 명시적 암호화 설정을 대체하는 것은 아니다. 이 단계에서는 기존 PVC가 생성될 때 AWS 계정 설정에만 의존하고 있지 않은지 확인한다.
 
@@ -107,7 +105,7 @@ aws ec2 get-ebs-default-kms-key-id \
 
 운영 환경에서는 AWS managed key `alias/aws/ebs`를 사용할지, customer managed KMS key를 사용할지 정책으로 정해야 한다. 감사, key rotation, key policy 분리, 계정 간 복구 요구사항이 있으면 customer managed key를 검토한다.
 
-### **Step 3: 암호화된 EBS StorageClass를 선언한다**
+### Step 3: 암호화된 EBS StorageClass를 선언한다
 
 EBS CSI Driver를 사용하는 StorageClass에는 암호화 의도를 명시한다. 이 StorageClass는 기존 상태 저장 워크로드가 사용할 표준 StorageClass로 관리한다.
 
@@ -140,7 +138,7 @@ parameters:
 
 이 경우 EBS CSI Driver가 사용하는 IAM role에 해당 KMS key 사용 권한이 필요하다. 최소한 `kms:CreateGrant`, `kms:Encrypt`, `kms:Decrypt`, `kms:ReEncrypt*`, `kms:GenerateDataKey*`, `kms:DescribeKey` 권한을 key policy와 IAM policy 양쪽에서 검토한다.
 
-### **Step 4: 기존 StatefulSet이 암호화 StorageClass를 사용하게 한다**
+### Step 4: 기존 StatefulSet이 암호화 StorageClass를 사용하게 한다
 
 `db`처럼 PVC를 자동 생성하는 기존 StatefulSet은 `volumeClaimTemplates`에 암호화 StorageClass를 선언한다.
 
@@ -164,7 +162,7 @@ spec:
 
 `db` StatefulSet도 이 방식으로 Redis 데이터 볼륨을 `encrypted-gp3`에 연결한다. 이 변경은 새로 생성되는 PVC와 EBS 볼륨에 적용된다. 기존 PVC/PV가 이미 존재한다면 새 StorageClass로 자동 변경되지 않으므로 별도 마이그레이션 계획이 필요하다.
 
-### **Step 5: 기본 StorageClass 의존을 줄인다**
+### Step 5: 기본 StorageClass 의존을 줄인다
 
 PVC에 `storageClassName`이 없으면 클러스터 기본 StorageClass가 사용된다. 기본 StorageClass가 암호화되어 있어도 저장소 보안 의도가 보이지 않기에 민감 데이터를 저장하는 PVC에는 명시적 StorageClass를 둔다.
 
@@ -182,7 +180,7 @@ kubectl get storageclass -o yaml \
 
 기본 StorageClass 변경은 새 PVC 생성 경로 전체에 영향을 주므로, 이 항목에서는 기존 취약 워크로드의 `storageClassName`을 명시적으로 보완하는 것을 우선한다. 기본 StorageClass 전환은 별도 변경으로 분리해 영향 범위를 검토한 뒤 적용한다.
 
-### **Step 6: 기존 비암호화 PV는 재생성 또는 마이그레이션한다**
+### Step 6: 기존 비암호화 PV는 재생성 또는 마이그레이션한다
 
 StorageClass를 수정해도 이미 생성된 EBS 볼륨은 암호화되지 않는다. 기존 PV가 비암호화라면 다음 중 하나로 전환한다.
 
@@ -210,7 +208,7 @@ aws ec2 describe-volumes \
 
 `Encrypted`가 `False`면 데이터 마이그레이션 대상으로 분류한다.
 
-### **Step 7: 점검 스크립트를 CI 또는 운영 점검에 포함한다**
+### Step 7: 점검 스크립트를 CI 또는 운영 점검에 포함한다
 
 `scripts/check_ebs_encryption.py`는 기존 매니페스트와 live 리소스의 암호화 상태를 점검하기 위한 보조 도구로 아래의 항목을 함께 확인한다.
 
@@ -342,7 +340,7 @@ kubectl kustomize manifests/base \
 - **데이터 보호 실패:** 로그, 캐시, DB 파일, 업로드 파일, 세션 저장소가 저장 시 암호화되지 않아 스토리지 계층 침해 시 피해가 커진다.
 - **심각도:** **높음**. 워크로드 스토리지는 실제 애플리케이션 데이터가 장기간 남는 계층이므로 암호화 누락은 데이터 유출과 복구 비용 증가로 이어질 수 있다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - **기존 PV 마이그레이션 소요:** 이미 비암호화 볼륨이 있으면 애플리케이션 담당자와 함께 백업, 복구, 데이터 검증, 중단 시간 조율이 필요하다. 
 - **AWS 비용 발생 여부 및 예상 규모:** EBS 암호화 자체에는 별도 추가 요금이 없다. 다만 EBS 볼륨, snapshot, snapshot copy, 데이터 전송, KMS API 호출 비용은 사용량에 따라 발생할 수 있다.
@@ -376,7 +374,7 @@ kubectl kustomize manifests/base \
 - **[Kubernetes Security Checklist](https://kubernetes.io/docs/concepts/security/security-checklist/)**
   워크로드가 사용하는 Secret, volume, storage resource의 접근 통제와 보호 상태를 점검하는 원칙과 연결된다.
 
-## Assessment 체크리스트
+## 적용 시 체크리스트
 
 - [ ] AWS 계정/리전의 EBS 기본 암호화(`EBS encrypted by default`)가 활성화되어 있는가?
 - [ ] EBS CSI Driver 기반 StorageClass에 `parameters.encrypted: "true"`가 명시되어 있는가?

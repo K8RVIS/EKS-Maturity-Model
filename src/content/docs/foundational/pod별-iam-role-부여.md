@@ -3,8 +3,6 @@ title: "Pod별 IAM Role 부여를 통해 워크로드별 AWS 권한을 분리한
 description: "EKS에서 실행되는 Pod가 S3, Secrets Manager, SQS, DynamoDB, KMS 같은 AWS 리소스에 접근해야 하는 경우가 있다. 이때 Node IAM Role에 모든 권한을 부여하면 같은 Node 위에서 실행되는 여러 Pod가 과도한 AWS 권한을"
 phase: "Foundational"
 domain: "접근 제어"
-difficulty: "미정"
-owner: "공통 (전체 실습)"
 order: 30
 sidebar:
   order: 30
@@ -496,23 +494,12 @@ AccessDenied 또는 AWS 자격 증명 없음
 - **운영 리스크:** Pod Identity Association이 잘못 연결되면 Pod가 AWS 자격 증명을 받지 못해 애플리케이션 기능이 실패할 수 있다.
 - **권한 관리 리스크:** IAM Policy에 `s3:*` 또는 `Resource: "*"`를 사용하면 워크로드 단위 분리 효과가 약해진다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - **AWS 비용 발생 여부:** EKS Pod Identity Association 자체는 별도 비용이 없다. 다만 S3 요청, 데이터 전송, 저장 비용은 별도로 발생한다.
 - **운영 부담:** ServiceAccount와 IAM Role 매핑을 워크로드별로 관리해야 한다.
 - **자동화 필요성:** 운영 환경에서는 ServiceAccount 이름, IAM Role 이름, S3 prefix naming convention을 표준화하는 것이 좋다.
 - **검토 필요성:** IAM Policy는 코드 리뷰에서 `Action`, `Resource`, `Condition` 범위를 반드시 확인해야 한다.
-
-## Assessment 체크리스트
-
-- [ ] EKS Pod Identity Agent가 설치되어 있고 `ACTIVE` 상태인가?
-- [ ] AWS 리소스 접근이 필요한 Pod 전용 ServiceAccount가 분리되어 있는가?
-- [ ] ServiceAccount와 IAM Role이 Pod Identity Association으로 연결되어 있는가?
-- [ ] IAM Policy가 특정 S3 bucket과 prefix로 제한되어 있는가?
-- [ ] Pod 내부에서 `aws sts get-caller-identity` 결과가 전용 IAM Role로 확인되는가?
-- [ ] 허용된 S3 prefix 접근은 성공하는가?
-- [ ] 허용되지 않은 S3 bucket 또는 prefix 접근은 실패하는가?
-- [ ] 다른 ServiceAccount 또는 default ServiceAccount에서는 같은 S3 접근이 차단되는가?
 
 ## 참고 자료
 
@@ -521,7 +508,7 @@ AccessDenied 또는 AWS 자격 증명 없음
 - [Amazon EKS Best Practices - Identity and Access Management](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html)
 - [AWS IAM JSON policy elements: Resource](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html)
 
-## 연결된 보안 가이드라인 항목
+## 연계된 보안 가이드라인 항목
 
 이 항목은 아래 보안 기준과 직접 연결된다.
 
@@ -534,3 +521,14 @@ AccessDenied 또는 AWS 자격 증명 없음
 - **NSA/CISA Kubernetes Hardening Guidance**
   워크로드 ID와 권한 범위를 명확히 분리하고, 침해 시 영향 범위를 제한할 것을 권장한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] EKS Pod Identity Agent가 설치되어 있고 `ACTIVE` 상태인가?
+- [ ] AWS 리소스 접근이 필요한 Pod 전용 ServiceAccount가 분리되어 있는가?
+- [ ] ServiceAccount와 IAM Role이 Pod Identity Association으로 연결되어 있는가?
+- [ ] IAM Policy가 특정 S3 bucket과 prefix로 제한되어 있는가?
+- [ ] Pod 내부에서 `aws sts get-caller-identity` 결과가 전용 IAM Role로 확인되는가?
+- [ ] 허용된 S3 prefix 접근은 성공하는가?
+- [ ] 허용되지 않은 S3 bucket 또는 prefix 접근은 실패하는가?
+- [ ] 다른 ServiceAccount 또는 default ServiceAccount에서는 같은 S3 접근이 차단되는가?

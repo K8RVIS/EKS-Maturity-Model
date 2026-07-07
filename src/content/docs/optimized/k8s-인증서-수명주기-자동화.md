@@ -3,8 +3,6 @@ title: "K8s 인증서 수명주기를 자동화한다"
 description: "EKS에서 외부 사용자가 애플리케이션에 접근할 때 TLS 인증서는 ALB, NLB, Ingress Controller, CloudFront 같은 진입점에서 서비스 신뢰와 전송 중 데이터 보호를 담당한다. 인증서 자체는 AWS Certificate Manager(ACM)"
 phase: "Optimized"
 domain: "데이터 보호"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 50
 sidebar:
   order: 50
@@ -33,7 +31,7 @@ EKS에서 외부 사용자가 애플리케이션에 접근할 때 TLS 인증서�
 - Terraform에서 Cloudflare provider를 사용할 수 있도록 API token과 Zone ID가 준비되어야 한다.
 - Kubernetes Ingress 또는 Gateway가 어떤 ACM 인증서 ARN을 사용하는지 확인할 수 있어야 한다.
 
-### **Step 1: 인증서 수명주기 관리 대상을 분리한다**
+### Step 1: 인증서 수명주기 관리 대상을 분리한다
 
 인증서 자동화는 한 리소스로 끝나지 않는다. 다음 대상을 각각 코드로 관리한다.
 
@@ -48,7 +46,7 @@ EKS에서 외부 사용자가 애플리케이션에 접근할 때 TLS 인증서�
 
 이 중 DNS validation CNAME 유지에 초점을 둔다. 이는 ACM 자동 갱신의 전제 조건이므로 Optimized 단계의 중요한 기반이다.
 
-### **Step 2: Cloudflare provider를 platform 환경에 추가한다**
+### Step 2: Cloudflare provider를 platform 환경에 추가한다
 
 Cloudflare provider를 Terraform required providers에 포함한다.
 
@@ -73,7 +71,7 @@ export CLOUDFLARE_API_TOKEN="<cloudflare-api-token>"
 
 API token 권한은 대상 zone의 DNS record 관리에 필요한 최소 범위로 제한한다.
 
-### **Step 3: ACM DNS validation record 변수를 선언한다**
+### Step 3: ACM DNS validation record 변수를 선언한다
 
 Cloudflare zone ID와 ACM validation record 목록을 변수로 받는다.
 
@@ -101,7 +99,7 @@ variable "acm_dns_validation_records" {
 
 `cloudflare_zone_id`가 없는 상태에서 record만 입력되는 구성을 막아 Terraform plan 단계에서 오류를 내도록 한다.
 
-### **Step 4: Validation CNAME을 Terraform으로 유지한다**
+### Step 4: Validation CNAME을 Terraform으로 유지한다
 
 핵심 리소스는 다음 구조다.
 
@@ -135,7 +133,7 @@ resource "cloudflare_record" "acm_dns_validation" {
 - `trimsuffix(..., ".")`: ACM이 반환하는 FQDN 끝의 점을 provider 입력 형식에 맞춘다.
 - `prevent_destroy = true`: 실수로 validation record를 삭제해 자동 갱신 조건이 깨지는 일을 막는다.
 
-### **Step 5: team-a 예시를 전체 namespace 패턴으로 확장한다**
+### Step 5: team-a 예시를 전체 namespace 패턴으로 확장한다
 
 `terraform.tfvars`는 단일 validation record를 직접 선언한다.
 
@@ -191,7 +189,7 @@ locals {
 
 이 구조를 사용하면 특정 namespace에만 테스트하더라도 문서와 코드의 기본 설계는 모든 namespace를 대상으로 유지할 수 있다.
 
-### **Step 6: ACM에서 validation record를 가져오는 흐름을 표준화한다**
+### Step 6: ACM에서 validation record를 가져오는 흐름을 표준화한다
 
 이미 ACM 인증서가 수동으로 생성된 상태라면 현재 validation record를 먼저 조회한다.
 
@@ -249,7 +247,7 @@ resource "cloudflare_record" "team_acm_dns_validation" {
 
 환경이 아직 단일 인증서를 수동으로 관리한다면 `acm_dns_validation_records`에 record를 입력하는 방식으로 시작하고, 이후 ACM 인증서 생성까지 Terraform으로 흡수한다.
 
-### **Step 7: Ingress와 인증서 ARN 연결을 점검한다**
+### Step 7: Ingress와 인증서 ARN 연결을 점검한다
 
 ACM validation record가 유지되어도 Ingress가 오래된 인증서 ARN을 참조하면 실제 트래픽은 보호되지 않는다. ALB Ingress annotation을 확인한다.
 
@@ -277,7 +275,7 @@ metadata:
 
 애플리케이션 DNS 레코드는 ExternalDNS로 자동화하고, ACM validation CNAME은 Terraform으로 유지하는 방식이 역할 분리가 명확하다.
 
-### **Step 8: prevent_destroy 운영 절차를 정한다**
+### Step 8: prevent_destroy 운영 절차를 정한다
 
 `prevent_destroy = true`는 실수 방지에 유용하지만, 인증서를 의도적으로 교체하거나 도메인을 폐기할 때 Terraform destroy를 막을 수 있다. 운영 절차를 미리 정한다.
 
@@ -398,7 +396,7 @@ aws elbv2 describe-listeners \
 - **복구 리스크:** 인증서 만료 후 복구는 DNS 전파, ACM validation, ALB listener 갱신이 모두 필요해 즉시 해결되지 않을 수 있다.
 - **심각도:** **높음**. 외부 진입점 인증서 문제는 데이터 보호와 서비스 가용성에 동시에 영향을 준다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - **AWS 비용 발생 여부 및 예상 규모:** 퍼블릭 ACM 인증서 자체는 무료다. ALB, CloudWatch, EventBridge, SNS, 외부 모니터링 비용은 별도로 발생할 수 있다.
 - **Cloudflare 비용:** DNS record 관리와 API token 사용은 일반적으로 추가 비용 없이 가능하다. WAF, proxy, advanced certificate 기능은 플랜에 따라 비용이 달라질 수 있다.
@@ -431,7 +429,7 @@ aws elbv2 describe-listeners \
 - **[AWS Well-Architected Framework - Reliability Pillar](https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html)**
   외부 의존성 자동화, 장애 예방, 운영 준비성과 연결된다.
 
-## Assessment 체크리스트
+## 적용 시 체크리스트
 
 - [ ] ACM 인증서가 DNS validation 방식으로 발급되었는가?
 - [ ] ACM DNS validation CNAME이 Cloudflare 또는 DNS provider에서 Terraform으로 관리되는가?

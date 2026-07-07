@@ -3,8 +3,6 @@ title: "Cluster 감사 추적 및 Event Logging 체계를 구축한다"
 description: "Prometheus/Grafana 모니터링은 \"지금 클러스터가 어떤 상태인가\"를 보여준다. 하지만 보안 사고가 발생했을 때 \"누가 언제 무엇을 했는가\"를 사후에 증명하는 것은 전혀 다른 문제다. 이를 가능하게 하는 것이 감사 로그(Audit Log)와 이벤트 추적 체계"
 phase: "Efficient"
 domain: "Pod 보안"
-difficulty: "★★★"
-owner: "장해윤"
 order: 60
 sidebar:
   order: 60
@@ -312,7 +310,7 @@ AWS_PROFILE=<PROFILE> aws logs filter-log-events \
 
 ---
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -320,19 +318,6 @@ AWS_PROFILE=<PROFILE> aws logs filter-log-events \
 | AWS 추가 비용 | CloudWatch Logs 수집: GB당 약 $0.50. CloudTrail: 첫 번째 트레일 무료, 추가 트레일 이벤트당 과금. S3 스토리지: 365일 로그 보관 비용 발생 |
 | 도구 비용 | 없음 (AWS 네이티브 서비스) |
 | 운영 고려사항 | 로그 보존 기간(90일/365일)은 조직 보안 정책과 규정 요건에 맞게 조정한다. 초기에는 Metric Filter 임계값이 과민하게 설정되어 알림이 다량 발생할 수 있다. 운영 패턴 파악 후 임계값을 조정한다. |
-
----
-
-## Assessment 체크리스트
-
-- [ ] EKS 제어 평면 5종 로그(`api`, `audit`, `authenticator`, `controllerManager`, `scheduler`)가 활성화되어 있는가?
-- [ ] CloudWatch Log Group에 EKS 로그가 수집되고 보존 기간이 설정되어 있는가?
-- [ ] CloudTrail이 `IsLogging: true` 상태이고 S3에 로그가 저장되는가?
-- [ ] S3 버킷의 CloudTrail 로그가 KMS 암호화되어 있는가?
-- [ ] 4개 Metric Filter(`unauthorized-api-calls`, `pod-exec`, `secret-access`, `rbac-changes`)가 생성되어 있는가?
-- [ ] CloudWatch Alarm과 SNS Topic이 연결되어 있는가?
-- [ ] SNS 이메일 구독이 확인 완료(Confirmed) 상태인가?
-- [ ] kubectl exec 실행 시 SNS 알림이 수신되는가?
 
 ---
 
@@ -356,3 +341,16 @@ AWS_PROFILE=<PROFILE> aws logs filter-log-events \
 - **AWS EKS Best Practices**
   EKS 제어 평면 로그를 CloudWatch Logs로 수집하고, CloudTrail로 AWS API 호출을 이중 추적하며, 의심스러운 이벤트에 대한 알림 체계를 갖추도록 권장한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] EKS 제어 평면 5종 로그(`api`, `audit`, `authenticator`, `controllerManager`, `scheduler`)가 활성화되어 있는가?
+- [ ] CloudWatch Log Group에 EKS 로그가 수집되고 보존 기간이 설정되어 있는가?
+- [ ] CloudTrail이 `IsLogging: true` 상태이고 S3에 로그가 저장되는가?
+- [ ] S3 버킷의 CloudTrail 로그가 KMS 암호화되어 있는가?
+- [ ] 4개 Metric Filter(`unauthorized-api-calls`, `pod-exec`, `secret-access`, `rbac-changes`)가 생성되어 있는가?
+- [ ] CloudWatch Alarm과 SNS Topic이 연결되어 있는가?
+- [ ] SNS 이메일 구독이 확인 완료(Confirmed) 상태인가?
+- [ ] kubectl exec 실행 시 SNS 알림이 수신되는가?
+
+---

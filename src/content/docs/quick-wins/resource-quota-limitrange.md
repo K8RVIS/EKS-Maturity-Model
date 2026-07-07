@@ -3,8 +3,6 @@ title: "Cluster Resource 사용을 제한한다"
 description: "Kubernetes 클러스터는 여러 팀과 서비스가 같은 노드 풀, API 서버, 스케줄러, kubelet 자원을 공유한다. 특정 Pod가 CPU를 과도하게 사용하거나 메모리 누수로 계속 확장되면 해당 Pod만 느려지는 것이 아니라 같은 노드의 다른 Pod까지 지연, 재"
 phase: "Quick Wins"
 domain: "Pod 보안"
-difficulty: "★☆☆"
-owner: "공통 (전체 실습)"
 order: 40
 sidebar:
   order: 40
@@ -326,7 +324,7 @@ kubectl delete pod limitrange-test -n team-a --ignore-not-found
 
 ---
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -335,18 +333,6 @@ kubectl delete pod limitrange-test -n team-a --ignore-not-found
 | AWS 추가 비용 | 없음. 단, request/limit을 현실적으로 조정하면 필요한 노드 용량이 명확해져 비용 계획이 바뀔 수 있다. |
 | 도구 비용 | 없음. Kubernetes 기본 리소스 사용 |
 | 운영 고려사항 | 너무 낮은 quota는 정상 배포를 막고, 너무 높은 quota는 보호 효과가 약하다. 초기에는 보수적으로 적용한 뒤 관측 데이터 기반으로 조정한다. |
-
----
-
-## Assessment 체크리스트
-
-- [ ] 모든 팀 또는 서비스 네임스페이스에 `ResourceQuota`가 적용되어 있는가?
-- [ ] 모든 팀 또는 서비스 네임스페이스에 기본 `LimitRange`가 적용되어 있는가?
-- [ ] 주요 워크로드 컨테이너에 CPU/Memory request와 limit이 명시되어 있는가?
-- [ ] quota 초과 Pod 생성이 `Forbidden` 오류로 차단되는 것을 테스트했는가?
-- [ ] 개발/스테이징/프로덕션 네임스페이스의 quota 강도가 환경 특성에 맞게 다르게 설정되어 있는가?
-- [ ] CPU throttling, OOMKilled, Pending Pod, quota 초과 이벤트를 관측하고 값 조정 기준을 정했는가?
-- [ ] quota 값이 실제 사용량과 서비스 중요도에 맞게 주기적으로 조정되는가?
 
 ---
 
@@ -371,3 +357,15 @@ kubectl delete pod limitrange-test -n team-a --ignore-not-found
 - **AWS EKS Best Practices**
   멀티테넌트 환경에서 ResourceQuota와 LimitRange를 함께 적용해 팀 간 자원 격리를 보장하고, Cluster Autoscaler와의 예측 가능한 연동을 위해 request/limit 명시를 권장한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] 모든 팀 또는 서비스 네임스페이스에 `ResourceQuota`가 적용되어 있는가?
+- [ ] 모든 팀 또는 서비스 네임스페이스에 기본 `LimitRange`가 적용되어 있는가?
+- [ ] 주요 워크로드 컨테이너에 CPU/Memory request와 limit이 명시되어 있는가?
+- [ ] quota 초과 Pod 생성이 `Forbidden` 오류로 차단되는 것을 테스트했는가?
+- [ ] 개발/스테이징/프로덕션 네임스페이스의 quota 강도가 환경 특성에 맞게 다르게 설정되어 있는가?
+- [ ] CPU throttling, OOMKilled, Pending Pod, quota 초과 이벤트를 관측하고 값 조정 기준을 정했는가?
+- [ ] quota 값이 실제 사용량과 서비스 중요도에 맞게 주기적으로 조정되는가?
+
+---
