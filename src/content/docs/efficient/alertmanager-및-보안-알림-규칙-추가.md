@@ -283,12 +283,9 @@ curl -s "http://localhost:9090/api/v1/query?query=kube_resourcequota{resource=\"
 
 ## 발생 비용
 
-| 항목 | 내용 |
-| --- | --- |
-| 담당자 | 플랫폼/DevSecOps 담당자 (알림 규칙 설계, 임계값 튜닝, 수신처 관리) |
-| AWS 추가 비용 | AlertManager PVC용 EBS GP3 스토리지 비용 발생 (2Gi 기준 약 월 $0.2). 이메일 알림은 SNS 연동 시 추가 비용 가능 |
-| 도구 비용 | AlertManager는 오픈소스. PagerDuty, OpsGenie 등 상용 On-Call 도구 연동 시 별도 비용 발생 |
-| 운영 고려사항 | 초기에는 알림이 과다 발생할 수 있다. `for` 지속 시간과 임계값을 실제 워크로드 패턴에 맞게 조정하고, 알림 그룹화(grouping)와 억제(inhibit) 규칙을 설정해 알림 피로를 방지한다. |
+- **AWS 추가 비용 :**AlertManager PVC용 EBS GP3 스토리지 비용 발생 (2Gi 기준 약 월 $0.2). 이메일 알림은 SNS 연동 시 추가 비용 가능.
+- **도구 비용:** AlertManager는 오픈소스. PagerDuty, OpsGenie 등 상용 On-Call 도구 연동 시 별도 비용 발생.
+- **운영 고려 사항:** 초기에는 알림이 과다 발생할 수 있다. `for` 지속 시간과 임계값을 실제 워크로드 패턴에 맞게 조정하고, 알림 그룹화(grouping)와 억제(inhibit) 규칙을 설정해 알림 피로를 방지한다. 
 
 ---
 
