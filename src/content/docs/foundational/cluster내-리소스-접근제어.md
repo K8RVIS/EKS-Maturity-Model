@@ -397,18 +397,10 @@ ClusterRoleBinding을 적용했다면 기대 결과는 `yes`이다. 적용하지
 - **영향 범위:** 네임스페이스 내 민감 정보 노출, 워크로드 변조, 악성 Pod 배포, 다른 네임스페이스로의 이동, 클러스터 전체 권한 탈취 가능성
 - **심각도:** **높음**. RBAC는 Kubernetes API 접근의 핵심 통제 지점이며, 과도한 권한은 침해 사고의 피해 범위를 크게 확대한다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - **AWS 비용 발생 여부 및 예상 규모:** 없음. Kubernetes 기본 RBAC 리소스 생성만으로 적용 가능
 - **정책 및 권한 관리 도구:** 대규모 환경에서는 Kyverno, OPA Gatekeeper, RBAC Manager 같은 정책 또는 권한 관리 도구를 추가로 사용할 수 있다.
-
-## Assessment 체크리스트
-
-- [ ] 네임스페이스별로 필요한 권한 범위가 정의되어 있는가?
-- [ ] ServiceAccount 또는 사용자에 RoleBinding이 명시적으로 연결되어 있는가?
-- [ ] 적용한 권한에 맞게 다른 네임스페이스에 대한 접근이 차단되는가?
-- [ ] ClusterRoleBinding이 필요한 경우에만 사용되고 있는가?
-- [ ] Role 또는 ClusterRole에 불필요한 `*` wildcard 권한이 없는가?
 
 ## 참고 자료
 
@@ -416,7 +408,7 @@ ClusterRoleBinding을 적용했다면 기대 결과는 `yes`이다. 적용하지
 - [Kubernetes - Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 - [Kubernetes - Configure Service Accounts for Pods](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/)
 
-## 연결된 보안 가이드라인 항목
+## 연계된 보안 가이드라인 항목
 
 이 항목은 아래 보안 기준과 직접 연결된다.
 
@@ -433,3 +425,11 @@ ClusterRoleBinding을 적용했다면 기대 결과는 `yes`이다. 적용하지
   `RBAC and least privilege`
   사용자와 ServiceAccount에 필요한 최소 권한만 부여하고, 클러스터 전체 권한은 엄격히 제한할 것을 권고한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] 네임스페이스별로 필요한 권한 범위가 정의되어 있는가?
+- [ ] ServiceAccount 또는 사용자에 RoleBinding이 명시적으로 연결되어 있는가?
+- [ ] 적용한 권한에 맞게 다른 네임스페이스에 대한 접근이 차단되는가?
+- [ ] ClusterRoleBinding이 필요한 경우에만 사용되고 있는가?
+- [ ] Role 또는 ClusterRole에 불필요한 `*` wildcard 권한이 없는가?

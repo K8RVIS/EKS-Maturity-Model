@@ -111,7 +111,7 @@ resource "aws_inspector2_filter" "triage" {
 
 ## 검증 방법
 
-### Step 1. 억제 필터 생성 확인
+### Step 1: 억제 필터 생성 확인
 
 ```bash
 AWS_PROFILE=<PROFILE> aws inspector2 list-filters \
@@ -129,7 +129,7 @@ eks-secure-infra-triage-api   arn:aws:inspector2:ap-northeast-2:...
 eks-secure-infra-triage-db    arn:aws:inspector2:ap-northeast-2:...
 ```
 
-### Step 2. 트리아지 후 ACTIVE findings 재확인
+### Step 2: 트리아지 후 ACTIVE findings 재확인
 
 ```bash
 AWS_PROFILE=<PROFILE> aws inspector2 list-findings \
@@ -148,7 +148,7 @@ AWS_PROFILE=<PROFILE> aws inspector2 list-findings \
 CRITICAL  libssl3   ← nginx가 실제로 링크하는 라이브러리
 ```
 
-### Step 3. 억제된 findings 보관 확인
+### Step 3: 억제된 findings 보관 확인
 
 ```bash
 AWS_PROFILE=<PROFILE> aws inspector2 list-findings \
@@ -181,23 +181,13 @@ AWS_PROFILE=<PROFILE> aws inspector2 list-findings \
 
 ---
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 |------|------|
 | 담당자 | DevSecOps 또는 플랫폼 담당자 (필터 규칙 정의 및 유지) |
 | AWS 추가 비용 | Inspector filter: 추가 비용 없음 |
 | 운영 고려사항 | 서비스 런타임이 변경되는 경우 (예: Go → Python 마이그레이션) 억제 규칙을 갱신해야 한다. 억제된 findings는 정기적으로 검토하여 규칙의 유효성을 확인한다. |
-
----
-
-## Assessment 체크리스트
-
-- [ ] 서비스(레포)별 SUPPRESS 필터가 생성되어 있는가?
-- [ ] ACTIVE findings에서 서비스 런타임과 무관한 패키지 취약점이 제거되어 있는가?
-- [ ] 억제된 findings가 SUPPRESSED 상태로 보관되어 있는가?
-- [ ] 취약점 심각도별 판단 기준과 조치 기한이 문서화되어 있는가?
-- [ ] 서비스 런타임 변경 시 억제 규칙 갱신 프로세스가 수립되어 있는가?
 
 ---
 
@@ -217,3 +207,13 @@ AWS_PROFILE=<PROFILE> aws inspector2 list-findings \
 - **NSA/CISA Kubernetes Hardening Guidance**
   컨테이너 이미지 취약점은 발견 후 즉각적인 패치 또는 격리 조치를 취하도록 권고하며, 지속적인 모니터링 프로세스를 요구한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] 서비스(레포)별 SUPPRESS 필터가 생성되어 있는가?
+- [ ] ACTIVE findings에서 서비스 런타임과 무관한 패키지 취약점이 제거되어 있는가?
+- [ ] 억제된 findings가 SUPPRESSED 상태로 보관되어 있는가?
+- [ ] 취약점 심각도별 판단 기준과 조치 기한이 문서화되어 있는가?
+- [ ] 서비스 런타임 변경 시 억제 규칙 갱신 프로세스가 수립되어 있는가?
+
+---

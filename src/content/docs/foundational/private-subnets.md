@@ -335,7 +335,7 @@ aws elbv2 describe-load-balancers \
 - **영향 범위:** Worker node 침해, Pod lateral movement, 민감 데이터 접근, 클러스터 내부 서비스 스캔, 서비스 장애
 - **심각도:** **높음**
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - AWS 추가 비용: 기존 `fck-nat` instance 비용 발생. NAT Gateway 추가 비용은 없음
 - 비용 참고: NAT Gateway 대신 `fck-nat`을 사용하므로 시간당 NAT Gateway 비용과 처리량 비용을 줄일 수 있지만, EC2 instance 운영과 가용성 관리는 직접 고려해야 한다
@@ -348,7 +348,12 @@ aws elbv2 describe-load-balancers \
 - [AWS Load Balancer Controller - Subnet Discovery](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/deploy/subnet_discovery/)
 - [fck-nat](https://fck-nat.dev/)
 
-## Assessment 체크리스트
+## 연계된 보안 가이드라인 항목
+
+
+추후 업데이트 예정.
+
+## 적용 시 체크리스트
 
 - [ ] VPC가 최소 2개 AZ에 Public Subnet과 Private Subnet 쌍을 가지고 있는가?
 - [ ] managed node group의 subnet ID가 Private Subnet ID와 일치하는가?

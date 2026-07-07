@@ -129,7 +129,7 @@ kubectl get namespaces -l 'pod-security.kubernetes.io/enforce=baseline' \
 
 ---
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -137,14 +137,6 @@ kubectl get namespaces -l 'pod-security.kubernetes.io/enforce=baseline' \
 | AWS 추가 비용 | PSS는 Kubernetes 내장 기능으로 추가 비용 없음 |
 | 도구 비용 | 없음 |
 | 운영 고려사항 | 기존 클러스터에 enforce를 처음 적용할 때는 audit/warn 모드를 먼저 활성화해 위반 워크로드를 파악한 뒤 enforce로 전환한다. |
-
----
-
-## Assessment 체크리스트
-
-- [ ] 모든 팀 네임스페이스에 `pod-security.kubernetes.io/enforce=baseline` 레이블이 설정되어 있는가?
-- [ ] `privileged: true` Pod 생성이 거부되는가?
-- [ ] 기존 운영 워크로드가 PSS Baseline 기준에서 정상 실행되는가?
 
 ---
 
@@ -167,3 +159,11 @@ kubectl get namespaces -l 'pod-security.kubernetes.io/enforce=baseline' \
 - **AWS EKS Best Practices**
   모든 네임스페이스에 PSS 레이블을 설정해 Privileged 설정을 가진 워크로드의 실행을 제한하고, 감사 로그와 함께 운영할 것을 권장한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] 모든 팀 네임스페이스에 `pod-security.kubernetes.io/enforce=baseline` 레이블이 설정되어 있는가?
+- [ ] `privileged: true` Pod 생성이 거부되는가?
+- [ ] 기존 운영 워크로드가 PSS Baseline 기준에서 정상 실행되는가?
+
+---

@@ -35,7 +35,7 @@ securityContext:
 
 ## 수행 방법
 
-#### 사전 조건
+### 사전 조건
 
 - 대상 애플리케이션이 root 권한 없이 실행 가능한지 확인해야 한다.
 - 애플리케이션이 쓰는 경로를 확인해야 한다. 예: `/tmp`, `/var/cache`, `/var/log`, 업로드 디렉터리
@@ -169,7 +169,7 @@ spec:
 
 외부 공개용 샘플에서는 root로 80 포트에 바인딩하는 이미지보다, 8080 등 비특권 포트를 사용하는 non-root 이미지를 선택하는 편이 단순하다.
 
-**Step 4: eks-secure-infra에 수동으로 반영한다**
+### Step 4: eks-secure-infra에 수동으로 반영한다
 
 현재 저장소 기준으로는 [deployment.yaml](https://github.com/K8RVIS/eks-secure-infra/blob/main/manifests/base/web/deployment.yaml#L25)의 `web` Deployment가 가장 직접적인 적용 포인트다.
 
@@ -181,7 +181,7 @@ spec:
 4. 컨테이너 `securityContext`에 `readOnlyRootFilesystem: true`, `allowPrivilegeEscalation: false`, `capabilities.drop: ["ALL"]`을 추가한다.
 5. 쓰기가 필요한 경로만 `emptyDir`로 열고, 서비스 포트와 컨테이너 포트를 함께 조정한다.
 
-**추가 보안 강화 요소: Pod Security Admission으로 재발을 방지한다**
+### 추가 보안 강화 요소: Pod Security Admission으로 재발을 방지한다
 
 개별 Deployment를 수정하는 것만으로는 새 워크로드가 다시 root로 배포되는 것을 막기 어렵다. 따라서 네임스페이스에 Kubernetes Pod Security Admission을 적용해 `restricted` 기준을 강제하거나, 먼저 `warn`/`audit`로 영향도를 확인한 뒤 `enforce`로 전환하는 방식을 적용할 수 있다.
 
@@ -203,7 +203,7 @@ kubectl label namespace team-a \
 
 운영 환경에서는 컨트롤러, CNI, CSI, 관측 도구처럼 특권이 필요한 시스템 워크로드를 애플리케이션 네임스페이스와 분리하고, 예외 네임스페이스는 별도 기준으로 관리해야 한다.
 
-**자동화 스크립트를 이용한 일괄 보안 패치(Advanced)**
+### 자동화 스크립트를 이용한 일괄 보안 패치 (Advanced)
 
 운영 환경에서는 관리해야 할 매니페스트 파일이 매우 많은 경우 활용하면 효율적인 방법이다. 팀 내에서 개발된 스크립트를 활용하면 manifests 디렉터리 내의 모든 YAML 파일을 검사하고 보안 설정을 자동 적용할 수 있다.
 
@@ -215,7 +215,7 @@ kubectl label namespace team-a \
 
 - 권한 상승 방지: 볼륨 마운트가 감지될 경우 자동으로 fsGroup 설정을 추가하여 권한 문제를 사전에 방지한다.
 
-**사용 방법**
+#### 사용 방법
 
 1. 드라이 런 (검토 모드): 실제 파일을 수정하지 않고 어떤 부분이 변경되어야 하는지, 수동 확인이 필요한 지점은 어디인지 출력한다.
 
@@ -229,7 +229,7 @@ python harden_manifests.py --manifests-dir ./manifests
 python harden_manifests.py --manifests-dir ./manifests --write
 ```
 
-**자동화 적용 시 주의사항**
+#### 자동화 적용 시 주의사항
 스크립트 실행 후 다음과 같은 항목은 반드시 사람이 직접 확인해야 한다.
 
 - 포트 변경 확인: 기존 포트 80을 사용하던 Nginx 등이 8080으로 변경될 경우, 이와 연결된 Service의 targetPort도 함께 수정되었는지 확인이 필요하다.
@@ -301,20 +301,10 @@ kubectl run root-test -n <namespace명> \
 - **영향 범위:** 컨테이너 내부 변조, 민감 파일 접근, 잘못 마운트된 볼륨 변조, 서비스 계정 토큰 및 환경변수 탈취, 다른 취약한 설정과 결합된 노드 또는 클러스터 권한 상승 가능성
 - **심각도:** **높음**. root 실행 자체만으로 즉시 호스트 root를 얻는 것은 아니지만, 컨테이너 탈출 취약점이나 과도한 capability, privileged 설정, hostPath 마운트와 결합되면 피해 범위가 크게 확대된다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - **AWS 비용 발생 여부 및 예상 규모:** 없음. Kubernetes 기본 보안 컨텍스트와 매니페스트 수정만으로 적용 가능
 - **오픈소스 vs 상용 도구 선택 시 비용 차이:** 필수 비용 없음. 정책 검증 자동화가 필요하면 Kyverno, OPA Gatekeeper 같은 오픈소스 정책 엔진을 추가로 사용할 수 있다.
-
-## Assessment 체크리스트
-
-- [ ] Deployment 또는 Pod에 `runAsNonRoot: true`가 설정되어 있는가?
-- [ ] `runAsUser`와 `runAsGroup`이 0이 아닌 UID/GID로 명시되어 있는가?
-- [ ] 컨테이너에 `readOnlyRootFilesystem: true`가 설정되어 있는가?
-- [ ] 컨테이너에 `allowPrivilegeEscalation: false`이 적용되어 있는가?
-- [ ] 애플리케이션이 쓰는 경로가 루트 파일시스템이 아니라 명시적인 볼륨으로 분리되어 있는가?
-- [ ] `kubectl exec -- id` 결과가 `uid=0(root)`가 아님을 확인했는가?
-- [ ] 루트 파일시스템 쓰기 시도 시 `Read-only file system` 오류가 발생하는가?
 
 ## 참고 자료
 
@@ -338,3 +328,13 @@ kubectl run root-test -n <namespace명> \
   `Appendix B: Example deployment template for read-only file system`
   컨테이너의 루트 파일시스템을 읽기 전용으로 설정하고, 쓰기가 필요한 위치만 별도 볼륨으로 제공하는 패턴을 제시한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] Deployment 또는 Pod에 `runAsNonRoot: true`가 설정되어 있는가?
+- [ ] `runAsUser`와 `runAsGroup`이 0이 아닌 UID/GID로 명시되어 있는가?
+- [ ] 컨테이너에 `readOnlyRootFilesystem: true`가 설정되어 있는가?
+- [ ] 컨테이너에 `allowPrivilegeEscalation: false`이 적용되어 있는가?
+- [ ] 애플리케이션이 쓰는 경로가 루트 파일시스템이 아니라 명시적인 볼륨으로 분리되어 있는가?
+- [ ] `kubectl exec -- id` 결과가 `uid=0(root)`가 아님을 확인했는가?
+- [ ] 루트 파일시스템 쓰기 시도 시 `Read-only file system` 오류가 발생하는가?

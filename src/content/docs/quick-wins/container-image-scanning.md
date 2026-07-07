@@ -156,7 +156,7 @@ AWS_PROFILE=<PROFILE> aws inspector2 get-member \
 
 ---
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -164,16 +164,6 @@ AWS_PROFILE=<PROFILE> aws inspector2 get-member \
 | AWS 추가 비용 | ECR 기본 스캔은 추가 비용 없음. Amazon Inspector 기반 향상된 스캔은 스캔 대상 이미지와 사용량에 따라 비용 발생 |
 | 도구 비용 | GitHub Advanced Security, 상용 이미지 스캐너, CSPM/CNAPP 도입 시 별도 비용 발생 |
 | 운영 고려사항 | ECR 향상된 스캔 활성화 후 기존 이미지에 대한 findings가 다수 발생할 수 있다. 초기에는 findings를 검토하고 조치 우선순위를 정해야 한다. |
-
----
-
-## Assessment 체크리스트
-
-- [ ] ECR registry scanning configuration이 `ENHANCED` + `CONTINUOUS_SCAN`으로 설정되어 있는가?
-- [ ] Amazon Inspector v2 ECR 스캔이 `ENABLED` 상태인가?
-- [ ] ECR 리포지토리 태그가 `IMMUTABLE`로 설정되어 있는가?
-- [ ] ECR 이미지 암호화가 `KMS`로 설정되어 있는가?
-- [ ] Inspector findings에서 Critical/High 취약점을 정기적으로 확인하는가?
 
 ---
 
@@ -195,3 +185,13 @@ AWS_PROFILE=<PROFILE> aws inspector2 get-member \
 - **AWS EKS Best Practices**
   ECR 이미지 스캔, Amazon Inspector를 조합해 워크로드 이미지의 취약점을 지속적으로 관리하는 것을 권장한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] ECR registry scanning configuration이 `ENHANCED` + `CONTINUOUS_SCAN`으로 설정되어 있는가?
+- [ ] Amazon Inspector v2 ECR 스캔이 `ENABLED` 상태인가?
+- [ ] ECR 리포지토리 태그가 `IMMUTABLE`로 설정되어 있는가?
+- [ ] ECR 이미지 암호화가 `KMS`로 설정되어 있는가?
+- [ ] Inspector findings에서 Critical/High 취약점을 정기적으로 확인하는가?
+
+---

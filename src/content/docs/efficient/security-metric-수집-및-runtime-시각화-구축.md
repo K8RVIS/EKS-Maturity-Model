@@ -191,7 +191,7 @@ kube_resourcequota{resource="requests.cpu", type="used"} / kube_resourcequota{re
 
 ---
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -199,17 +199,6 @@ kube_resourcequota{resource="requests.cpu", type="used"} / kube_resourcequota{re
 | AWS 추가 비용 | 없음 (ConfigMap은 Kubernetes 내장 리소스) |
 | 도구 비용 | 없음 |
 | 운영 고려사항 | 임계값(70%/90%)은 초기값이다. 실제 워크로드 패턴을 관찰한 뒤 조직 상황에 맞게 조정한다. PromQL 쿼리는 클러스터 규모나 네임스페이스 구조 변경 시 함께 검토해야 한다. |
-
----
-
-## Assessment 체크리스트
-
-- [ ] `grafana-security-dashboard` ConfigMap이 `grafana_dashboard=1` 레이블로 생성되어 있는가?
-- [ ] Grafana UI에 보안 대시보드가 자동 등록되어 있는가?
-- [ ] API Server 4xx 요청률 패널이 데이터를 표시하는가?
-- [ ] Pod 재시작 횟수 패널이 네임스페이스별로 표시되는가?
-- [ ] ResourceQuota CPU/Memory 패널의 임계값(70%/90%)이 게이지에 반영되어 있는가?
-- [ ] Pending Pod 패널이 임계값(1개/3개)에 따라 색상이 변하는가?
 
 ---
 
@@ -234,3 +223,14 @@ kube_resourcequota{resource="requests.cpu", type="used"} / kube_resourcequota{re
 - **AWS EKS Best Practices**
   Grafana와 kube-state-metrics를 활용해 API 서버 요청 패턴, Pod 상태, 리소스 할당량을 시각화하고 이상 탐지 대시보드를 운영하도록 권장한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] `grafana-security-dashboard` ConfigMap이 `grafana_dashboard=1` 레이블로 생성되어 있는가?
+- [ ] Grafana UI에 보안 대시보드가 자동 등록되어 있는가?
+- [ ] API Server 4xx 요청률 패널이 데이터를 표시하는가?
+- [ ] Pod 재시작 횟수 패널이 네임스페이스별로 표시되는가?
+- [ ] ResourceQuota CPU/Memory 패널의 임계값(70%/90%)이 게이지에 반영되어 있는가?
+- [ ] Pending Pod 패널이 임계값(1개/3개)에 따라 색상이 변하는가?
+
+---

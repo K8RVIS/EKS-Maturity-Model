@@ -35,7 +35,7 @@ Efficient 단계의 Secret 접근 감사는 EKS audit log와 CloudTrail을 사�
 - CloudWatch, stdout log 수집, SIEM 중 Falco alert를 보관할 경로를 정해야 한다.
 - Efficient 단계의 EKS audit/authenticator 로그와 CloudTrail 기반 Secret 접근 감사가 함께 운영되는 것이 권장된다.
 
-### **Step 1: Falco 모듈을 platform 환경에 연결한다**
+### Step 1: Falco 모듈을 platform 환경에 연결한다
 
 `modules/falco`를 추가하고 platform 환경에서 호출한다.
 
@@ -67,7 +67,7 @@ module "argocd" {
 
 Falco는 노드 단위 runtime 탐지 도구이므로 특정 team namespace 안에 배포하지 않고 별도 `falco` namespace에 클러스터 공통 애드온으로 배포한다.
 
-### **Step 2: Falco Helm release를 Terraform으로 배포한다**
+### Step 2: Falco Helm release를 Terraform으로 배포한다
 
 Falco 모듈은 Helm provider를 사용한다.
 
@@ -123,7 +123,7 @@ variable "falco_chart_version" {
 }
 ```
 
-### **Step 3: Falco alert 출력 형식을 운영 로그 수집에 맞춘다**
+### Step 3: Falco alert 출력 형식을 운영 로그 수집에 맞춘다
 
 Falco 출력을 JSON으로 설정하고 stdout으로 내보낸다.
 
@@ -139,7 +139,7 @@ falco:
 
 JSON output은 CloudWatch Logs, Fluent Bit, OpenSearch, SIEM에서 필드 기반 검색과 알림을 만들기 좋다. stdout만 사용하는 경우 로그 보존은 클러스터 로그 수집 체계에 의존하므로, Falco namespace 로그가 실제로 중앙 수집되는지 반드시 확인한다.
 
-### **Step 4: Secret runtime 접근 탐지 rule을 추가한다**
+### Step 4: Secret runtime 접근 탐지 rule을 추가한다
 
 custom rule은 다음 Secret 관련 path와 행위를 탐지한다.
 
@@ -164,7 +164,7 @@ custom rule은 다음 Secret 관련 path와 행위를 탐지한다.
 
 이 rule들은 API 기반 Secret 접근 감사가 보지 못하는 런타임 행위를 탐지한다. 특히 `/proc/*/environ`은 환경변수로 주입된 Secret이 노출될 수 있는 경로이므로 Quick Wins의 `secretKeyRef` 전환 이후에도 중요한 보완 통제다.
 
-### **Step 5: 모든 namespace를 감사 대상으로 둔다**
+### Step 5: 모든 namespace를 감사 대상으로 둔다
 
 PR 테스트는 `falco-test` namespace에서 트리거했지만, 운영 rule은 특정 namespace로 제한하지 않는다. Falco output에는 `k8s.ns.name`, `k8s.pod.name`, `container.name`, `container.image.repository`가 포함되므로, 모든 namespace에서 이벤트를 수집한 뒤 쿼리나 알림에서 namespace별로 필터링한다.
 
@@ -179,7 +179,7 @@ PR 테스트는 `falco-test` namespace에서 트리거했지만, 운영 rule은 
 
 하지만 기본 rule에서 처음부터 운영 namespace를 제외하지 않는다. 정상 component의 접근도 기준선을 만드는 데 필요하고, system namespace 침해는 영향이 크기 때문이다.
 
-### **Step 6: 테스트 Pod로 runtime Secret 접근 이벤트를 만든다**
+### Step 6: 테스트 Pod로 runtime Secret 접근 이벤트를 만든다
 
 테스트용 namespace와 Secret, Pod를 만든다.
 
@@ -226,7 +226,7 @@ kubectl exec -n falco-test falco-secret-test -- sh -c "cat /proc/1/environ > /de
 
 이 테스트는 실제 운영 Secret 값을 사용하지 않는다. 검증용 더미 Secret만 사용한다.
 
-### **Step 7: Falco 로그에서 Secret 접근 이벤트를 확인한다**
+### Step 7: Falco 로그에서 Secret 접근 이벤트를 확인한다
 
 Falco Pod와 DaemonSet 상태를 확인한다.
 
@@ -267,7 +267,7 @@ kubectl logs -n falco -l app.kubernetes.io/name=falco --since=10m \
 
 중 하나 이상이 테스트 행위에 맞게 출력된다.
 
-### **Step 8: API 감사와 Falco 이벤트를 함께 해석한다**
+### Step 8: API 감사와 Falco 이벤트를 함께 해석한다
 
 Falco는 런타임 파일 접근을 탐지하지만, 누가 `kubectl exec`를 실행했는지는 EKS audit log에서 더 잘 보인다. 따라서 Secret 사고 조사 시 다음 순서로 연결한다.
 
@@ -279,7 +279,7 @@ Falco는 런타임 파일 접근을 탐지하지만, 누가 `kubectl exec`를 �
 
 Falco는 API 감사의 대체재가 아니라 런타임 관측 레이어다. 두 로그를 결합해야 "누가 API로 들어왔고, 어떤 Pod 안에서 어떤 파일을 읽었는지"를 설명할 수 있다.
 
-### **Step 9: 알림 튜닝과 예외 처리를 운영화한다**
+### Step 9: 알림 튜닝과 예외 처리를 운영화한다
 
 초기 적용 시 Falco는 많은 이벤트를 만들 수 있다. 다음 기준으로 튜닝한다.
 
@@ -385,7 +385,7 @@ fields @timestamp, verb, user.username, user.extra.arn.0, objectRef.namespace, o
 - **운영 리스크:** Falco DaemonSet은 노드 권한과 runtime 이벤트 수집 권한이 필요하므로 chart version, 권한, 성능 영향을 관리해야 한다.
 - **심각도:** **높음**. 런타임 Secret 접근은 실제 값 탈취 직전 또는 직후의 행위일 수 있으므로 빠른 탐지와 조사 연결이 필요하다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - **AWS 비용 발생 여부 및 예상 규모:** Falco 자체는 오픈소스다. 다만 Falco stdout 로그를 CloudWatch Logs, OpenSearch, SIEM으로 수집하면 저장 및 조회 비용이 발생한다.
 - **클러스터 리소스 비용:** Falco DaemonSet이 각 노드에서 CPU, 메모리, 이벤트 처리 리소스를 사용한다. 노드 수와 이벤트량에 따라 requests/limits를 조정해야 한다.
@@ -415,7 +415,7 @@ fields @timestamp, verb, user.username, user.extra.arn.0, objectRef.namespace, o
 - **[AWS Well-Architected Framework - Security Pillar](https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html)**
   detective control, incident response, least privilege 운영 원칙과 연결된다.
 
-## Assessment 체크리스트
+## 적용 시 체크리스트
 
 - [ ] Falco가 별도 `falco` namespace에 DaemonSet으로 배포되어 있는가?
 - [ ] Falco Helm chart version이 Terraform 변수로 pinning되어 있는가?

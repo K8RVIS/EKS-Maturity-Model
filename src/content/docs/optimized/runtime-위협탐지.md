@@ -234,7 +234,7 @@ kubectl delete pod falco-test -n team-a
 
 ---
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -242,16 +242,6 @@ kubectl delete pod falco-test -n team-a
 | AWS 추가 비용 | 없음 (클러스터 내 오픈소스 배포) |
 | 도구 비용 | Falco OSS는 무료. Falco Cloud 또는 상용 SIEM 연동 시 별도 비용 발생 |
 | 운영 고려사항 | 커스텀 룰의 오탐(false positive) 발생 시 예외 조건(`not proc.name in (...)`)을 추가해 노이즈를 줄인다. 기본 Falco 룰셋은 유지하고 `customRules`로만 프로젝트 특화 룰을 추가하는 방식을 권장한다. |
-
----
-
-## Assessment 체크리스트
-
-- [ ] Falco DaemonSet이 모든 노드에서 `Running` 상태인가?
-- [ ] `k8rvis_rules.yaml` 커스텀 룰 3개(Shell spawned, Write below etc, Sensitive file read)가 로드되어 있는가?
-- [ ] `/etc/shadow` 읽기 시도 시 `CRITICAL` 이벤트가 JSON으로 기록되는가?
-- [ ] 컨테이너 내 셸 실행 시 `WARNING` 이벤트가 기록되는가?
-- [ ] Falco 드라이버가 `modern_ebpf`로 설정되어 Graviton 노드를 지원하는가?
 
 ---
 
@@ -276,3 +266,13 @@ kubectl delete pod falco-test -n team-a
 - **AWS EKS Best Practices**
   eBPF 기반 런타임 탐지 도구를 EKS 클러스터에 적용해 침해 후 행위를 실시간으로 감지하고, 감사 로그와 연동해 사고 대응 체계를 구축하도록 권장한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] Falco DaemonSet이 모든 노드에서 `Running` 상태인가?
+- [ ] `k8rvis_rules.yaml` 커스텀 룰 3개(Shell spawned, Write below etc, Sensitive file read)가 로드되어 있는가?
+- [ ] `/etc/shadow` 읽기 시도 시 `CRITICAL` 이벤트가 JSON으로 기록되는가?
+- [ ] 컨테이너 내 셸 실행 시 `WARNING` 이벤트가 기록되는가?
+- [ ] Falco 드라이버가 `modern_ebpf`로 설정되어 Graviton 노드를 지원하는가?
+
+---

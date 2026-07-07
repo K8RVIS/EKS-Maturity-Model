@@ -209,7 +209,7 @@ curl -s http://localhost:9090/api/v1/targets | python3 -m json.tool | grep -E '"
 
 ---
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -217,16 +217,6 @@ curl -s http://localhost:9090/api/v1/targets | python3 -m json.tool | grep -E '"
 | AWS 추가 비용 | Prometheus PVC용 EBS GP3 스토리지 비용 발생 (20Gi 기준 약 월 $2) |
 | 도구 비용 | kube-prometheus-stack은 오픈소스로 추가 비용 없음 |
 | 운영 고려사항 | Prometheus 데이터 보존 기간(retention)을 7일로 설정했다. 장기 보존이 필요하면 Thanos 또는 Amazon Managed Service for Prometheus(AMP) 연동을 검토한다. |
-
----
-
-## Assessment 체크리스트
-
-- [ ] `monitoring` 네임스페이스의 모든 Pod가 `Running` 상태인가?
-- [ ] Prometheus PVC가 `Bound` 상태이고 암호화된 GP3 스토리지를 사용하는가?
-- [ ] Prometheus UI에서 `apiserver_request_total`, `kube_pod_container_status_restarts_total` 등 보안 메트릭 쿼리가 데이터를 반환하는가?
-- [ ] kube-state-metrics, node-exporter Scrape 타겟이 `up` 상태인가?
-- [ ] Grafana와 AlertManager가 이 단계에서는 비활성화되어 있는가?
 
 ---
 
@@ -250,3 +240,13 @@ curl -s http://localhost:9090/api/v1/targets | python3 -m json.tool | grep -E '"
 - **AWS EKS Best Practices**
   Amazon Managed Service for Prometheus(AMP) 또는 자체 Prometheus 스택을 사용해 클러스터 메트릭을 수집하고, 이상 징후 탐지를 위한 기반을 구축하도록 권장한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] `monitoring` 네임스페이스의 모든 Pod가 `Running` 상태인가?
+- [ ] Prometheus PVC가 `Bound` 상태이고 암호화된 GP3 스토리지를 사용하는가?
+- [ ] Prometheus UI에서 `apiserver_request_total`, `kube_pod_container_status_restarts_total` 등 보안 메트릭 쿼리가 데이터를 반환하는가?
+- [ ] kube-state-metrics, node-exporter Scrape 타겟이 `up` 상태인가?
+- [ ] Grafana와 AlertManager가 이 단계에서는 비활성화되어 있는가?
+
+---

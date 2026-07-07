@@ -43,7 +43,7 @@ spec:
 
 ## 수행 방법
 
-#### 사전 조건
+### 사전 조건
 
 - `kubectl`로 클러스터에 접근할 수 있어야 한다.
 - 대상 워크로드가 실제로 Kubernetes API 호출이 필요한지 사전에 확인해야 한다.
@@ -201,18 +201,10 @@ kubectl exec -n team-a deploy/api -- ls /var/run/secrets/kubernetes.io/serviceac
 - **영향 범위:** 네임스페이스 내 리소스 조회, RBAC 설정에 따라 Secret 열람, 워크로드 정보 수집, 추가 횡이동 시도까지 이어질 수 있다.
 - **심각도:** **중간~높음**. 기본 `default` SA 자체는 제한적일 수 있지만, 잘못된 RoleBinding이나 ClusterRoleBinding이 추가된 환경에서는 피해가 빠르게 커질 수 있다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - **AWS 비용 발생 여부 및 예상 규모:** 없음
 - **오픈소스 vs 상용 도구 선택 시 비용 차이:** 없음. Kubernetes 기본 기능과 매니페스트 수정만으로 적용 가능
-
-## Assessment 체크리스트
-
-- [ ] `default` ServiceAccount에 `automountServiceAccountToken: false`가 설정되어 있는가?
-- [ ] 일반 애플리케이션 워크로드가 `default` ServiceAccount를 직접 사용하지 않는가?
-- [ ] Kubernetes API 접근이 필요한 워크로드만 전용 ServiceAccount를 사용하고 있는가?
-- [ ] API 접근이 필요 없는 워크로드에는 `automountServiceAccountToken: false`가 적용되어 있는가?
-- [ ] `eks-secure-infra`의 `api` 워크로드가 `default` SA 대신 전용 SA를 사용하도록 수정되었는가?
 
 ## 참고 자료
 
@@ -266,3 +258,11 @@ kubectl exec -n team-a deploy/api -- ls /var/run/secrets/kubernetes.io/serviceac
 
 - **Kustomize 연동**: 식별된 대상에 대해서만 automountServiceAccountToken: false를 적용하는 default-sa-token-patch.yaml을 동적으로 생성하여, Kustomize 파이프라인에 자동으로 포함시킨다.
 
+
+## 적용 시 체크리스트
+
+- [ ] `default` ServiceAccount에 `automountServiceAccountToken: false`가 설정되어 있는가?
+- [ ] 일반 애플리케이션 워크로드가 `default` ServiceAccount를 직접 사용하지 않는가?
+- [ ] Kubernetes API 접근이 필요한 워크로드만 전용 ServiceAccount를 사용하고 있는가?
+- [ ] API 접근이 필요 없는 워크로드에는 `automountServiceAccountToken: false`가 적용되어 있는가?
+- [ ] `eks-secure-infra`의 `api` 워크로드가 `default` SA 대신 전용 SA를 사용하도록 수정되었는가?

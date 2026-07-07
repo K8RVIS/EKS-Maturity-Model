@@ -26,7 +26,7 @@ EKS에서는 NetworkPolicy 리소스를 생성하는 것만으로 충분하지 �
 - Amazon VPC CNI NetworkPolicy 기능을 사용하려면 VPC CNI managed add-on 또는 동등한 정책 엔진이 활성화되어 있어야 한다.
 - 테스트용 Pod 이미지를 실행할 수 있어야 한다. 예: `nicolaka/netshoot`
 
-### **Step 1: CNI가 NetworkPolicy를 집행하는지 확인한다**
+### Step 1: CNI가 NetworkPolicy를 집행하는지 확인한다
 
 먼저 NetworkPolicy 리소스와 실제 집행 상태를 구분해서 확인한다.
 
@@ -40,7 +40,7 @@ Amazon VPC CNI NetworkPolicy가 정상적으로 동작한다면 `aws-node` Daemo
 
 `NetworkPolicy`는 있는데 `PolicyEndpoint`가 전혀 없다면 정책이 실제 데이터플레인에 반영되지 않은 상태일 가능성이 높다. 이번 실습에서도 `NetworkPolicy` 8개가 생성되었지만 `PolicyEndpoint`가 없어서 `api`, `db`, `web` Service 접근이 모두 성공했다.
 
-### **Step 2: VPC CNI를 managed add-on으로 관리하고 NetworkPolicy를 활성화한다**
+### Step 2: VPC CNI를 managed add-on으로 관리하고 NetworkPolicy를 활성화한다
 
 기존 클러스터가 self-managed `aws-node`만 사용하고 있으면 AWS CLI의 `describe-addon --addon-name vpc-cni`에서 `No addon: vpc-cni found`가 발생할 수 있다. 이 경우 Terraform으로 VPC CNI를 managed add-on으로 전환하고 NetworkPolicy 기능을 코드로 관리한다.
 
@@ -85,7 +85,7 @@ aws eks describe-addon \
   --output json
 ```
 
-### **Step 3: 먼저 team-d Namespace에만 default deny를 적용한다**
+### Step 3: 먼저 team-d Namespace에만 default deny를 적용한다
 
 전체 Namespace에 바로 적용하면 기존 실습 워크로드가 동시에 영향을 받을 수 있다. 따라서 `team-d`에 먼저 적용하고 검증한 뒤 모든 워크로드 Namespace로 확장한다.
 
@@ -116,7 +116,7 @@ kubectl apply -n team-d -f manifests/overlays/team-d/network-policies.yaml
 kubectl get networkpolicy -n team-d
 ```
 
-### **Step 4: DNS Egress를 허용한다**
+### Step 4: DNS Egress를 허용한다
 
 Egress를 기본 차단하면 DNS도 함께 차단된다. 대부분의 워크로드는 Service 이름을 해석해야 하므로 CoreDNS로 향하는 TCP/UDP 53번을 명시적으로 허용한다.
 
@@ -144,7 +144,7 @@ spec:
           port: 53
 ```
 
-### **Step 5: 필수 서비스 흐름만 허용한다**
+### Step 5: 필수 서비스 흐름만 허용한다
 
 이번 실습 워크로드는 `web`, `api`, `db`로 구성되어 있다. 기본 차단 이후 다음 흐름만 허용한다.
 
@@ -201,7 +201,7 @@ Ingress와 Egress를 각각 명시하는 이유는 default deny가 양방향으�
 
 ## 검증 방법
 
-### **1. 정책 리소스가 생성되었는지 확인한다**
+### 1. 정책 리소스가 생성되었는지 확인한다
 
 ```bash
 kubectl get networkpolicy -n team-d
@@ -210,7 +210,7 @@ kubectl describe networkpolicy -n team-d
 
 기대 결과는 `default-deny-ingress`, `default-deny-egress`, `allow-dns-egress`, `allow-web-to-api`, `allow-api-ingress-from-web`, `allow-api-to-db`, `allow-db-ingress-from-api` 등이 보이는 것이다.
 
-### **2. EKS VPC CNI가 정책을 실제 endpoint로 변환했는지 확인한다**
+### 2. EKS VPC CNI가 정책을 실제 endpoint로 변환했는지 확인한다
 
 ```bash
 kubectl get policyendpoints -A
@@ -219,7 +219,7 @@ kubectl -n team-d get policyendpoints
 
 기대 결과는 `team-d`의 Pod에 대해 `PolicyEndpoint`가 생성되는 것이다. `No resources found`가 나오면 NetworkPolicy가 실제로 집행되지 않을 수 있다.
 
-### **3. 취약 상태를 확인한다**
+### 3. 취약 상태를 확인한다
 
 정책이 없거나 정책 엔진이 동작하지 않으면 테스트 Deployment Pod에서 내부 서비스 접근이 성공한다.
 
@@ -242,7 +242,7 @@ nc -vz -w 3 web 80
 
 미적용 또는 집행 실패 상태에서는 `api`, `db`, `web` 연결이 모두 성공할 수 있다. 이 경우 NetworkPolicy 리소스가 있어도 실제 차단은 되고 있지 않다.
 
-### **4. 적용 후 차단을 확인한다**
+### 4. 적용 후 차단을 확인한다
 
 정상 적용 후에는 DNS만 성공하고, 임의 테스트 Deployment Pod에서 허용되지 않은 워크로드 Service 접근은 실패해야 한다.
 
@@ -260,7 +260,7 @@ nc -vz -w 3 web 80
 
 `kubernetes.default.svc:443`는 차단 검증 대상으로 사용하지 않는다. Kubernetes API Service는 kube-proxy와 노드 경로가 개입하는 특수 대상이라 NetworkPolicy 구현체에 따라 일반 워크로드 Service와 다르게 보일 수 있다.
 
-### **5. 허용된 서비스 흐름을 확인한다**
+### 5. 허용된 서비스 흐름을 확인한다
 
 `web -> api`, `api -> db`처럼 명시적으로 허용한 흐름은 성공해야 한다. 워크로드 이미지에 `curl`, `nc`가 없으면 임시 디버그 Pod 또는 ephemeral container를 사용한다.
 
@@ -280,7 +280,7 @@ kubectl -n team-d describe networkpolicy allow-api-to-db
 - **정책 착시 위험:** NetworkPolicy 리소스는 존재하지만 CNI가 집행하지 않으면 보안 통제가 적용된 것처럼 보인다. `PolicyEndpoint` 또는 정책 엔진의 실제 집행 상태까지 검증해야 한다.
 - **심각도:** **높음**
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - AWS 추가 비용: Amazon VPC CNI NetworkPolicy 기능 자체는 별도 과금 없음
 - 운영 비용: 정책 설계와 서비스 간 통신 매트릭스 유지 비용 발생
@@ -292,7 +292,12 @@ kubectl -n team-d describe networkpolicy allow-api-to-db
 - [Limit Pod traffic with Kubernetes network policies on Amazon EKS](https://docs.aws.amazon.com/eks/latest/userguide/cni-network-policy.html)
 - [EKS Best Practices — Network Security](https://aws.github.io/aws-eks-best-practices/security/docs/network/)
 
-## Assessment 체크리스트
+## 연계된 보안 가이드라인 항목
+
+
+추후 업데이트 예정.
+
+## 적용 시 체크리스트
 
 - [ ] 사용 중인 CNI 또는 정책 엔진이 NetworkPolicy를 실제로 집행하는가?
 - [ ] `team-d` Namespace에 `default-deny-ingress`와 `default-deny-egress`가 적용되어 있는가?

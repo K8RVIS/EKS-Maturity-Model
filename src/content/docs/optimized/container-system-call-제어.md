@@ -293,7 +293,7 @@ kubectl exec -it <web-pod> -n team-a -- python3 -c "import ctypes; ctypes.CDLL(N
 
 ---
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -301,17 +301,6 @@ kubectl exec -it <web-pod> -n team-a -- python3 -c "import ctypes; ctypes.CDLL(N
 | AWS 추가 비용 | 없음 (Kubernetes 네이티브 기능) |
 | 도구 비용 | 없음 |
 | 운영 고려사항 | 신규 서비스 추가 시 해당 서비스의 syscall 프로파일을 사전에 수집하고 ConfigMap에 추가해야 한다. 정기적으로 `SCMP_ACT_LOG` 모드로 운영해 프로파일 누락 여부를 점검한다. |
-
----
-
-## Assessment 체크리스트
-
-- [ ] `seccomp-installer` DaemonSet이 모든 노드에서 `Running` 상태인가?
-- [ ] 각 노드 `/var/lib/kubelet/seccomp/`에 3개 프로파일 파일이 존재하는가?
-- [ ] web, api, db Pod의 `seccompProfile.type`이 `Localhost`로 설정되어 있는가?
-- [ ] 프로파일이 `SCMP_ARCH_AARCH64`를 포함해 Graviton 노드를 지원하는가?
-- [ ] 허용되지 않은 syscall 호출 시 `Operation not permitted` 오류가 반환되는가?
-- [ ] 기존 워크로드가 프로파일 적용 후 정상 동작하는가?
 
 ---
 
@@ -335,3 +324,14 @@ kubectl exec -it <web-pod> -n team-a -- python3 -c "import ctypes; ctypes.CDLL(N
 - **AWS EKS Best Practices**
   EKS 워크로드에 커스텀 Seccomp 프로파일을 적용해 런타임에서 허용되는 syscall 범위를 제한하도록 권장한다.
 
+
+## 적용 시 체크리스트
+
+- [ ] `seccomp-installer` DaemonSet이 모든 노드에서 `Running` 상태인가?
+- [ ] 각 노드 `/var/lib/kubelet/seccomp/`에 3개 프로파일 파일이 존재하는가?
+- [ ] web, api, db Pod의 `seccompProfile.type`이 `Localhost`로 설정되어 있는가?
+- [ ] 프로파일이 `SCMP_ARCH_AARCH64`를 포함해 Graviton 노드를 지원하는가?
+- [ ] 허용되지 않은 syscall 호출 시 `Operation not permitted` 오류가 반환되는가?
+- [ ] 기존 워크로드가 프로파일 적용 후 정상 동작하는가?
+
+---

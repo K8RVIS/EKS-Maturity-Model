@@ -34,7 +34,7 @@ Cilium은 eBPF를 이용해 커널 레벨에서 네트워크 흐름을 관찰하
 - 기존 Amazon VPC CNI 운영 정책과 충돌하지 않도록 배포 모델을 먼저 결정해야 한다.
 - 운영 환경에 바로 적용하지 말고 신규 클러스터 또는 실습 Namespace에서 검증한다.
 
-### **Step 1: Cilium 배포 모델을 결정한다**
+### Step 1: Cilium 배포 모델을 결정한다
 
 EKS에서는 크게 두 가지 배포 모델을 검토할 수 있다.
 
@@ -45,7 +45,7 @@ EKS에서는 크게 두 가지 배포 모델을 검토할 수 있다.
 
 이 실습에서는 기존 Amazon VPC CNI와의 충돌을 줄이기 위해 CNI chaining 방식을 기본으로 한다.
 
-### **Step 2: Cilium/Hubble Helm values를 준비한다**
+### Step 2: Cilium/Hubble Helm values를 준비한다
 
 `eks-secure-infra` 실습 레포에는 다음 values 파일을 둔다.
 
@@ -78,7 +78,7 @@ operator:
 
 핵심은 Amazon VPC CNI와 함께 사용할 수 있도록 `chainingMode: aws-cni`를 지정하고, Hubble relay/UI/metrics를 활성화하는 것이다.
 
-### **Step 3: Cilium과 Hubble을 설치한다**
+### Step 3: Cilium과 Hubble을 설치한다
 
 ```bash
 helm repo add cilium https://helm.cilium.io/
@@ -98,7 +98,7 @@ kubectl rollout restart deployment/api -n team-d
 kubectl rollout restart statefulset/db -n team-d
 ```
 
-### **Step 4: 표준 NetworkPolicy부터 적용한다**
+### Step 4: 표준 NetworkPolicy부터 적용한다
 
 먼저 표준 `NetworkPolicy`로 기본 deny와 필수 L4 흐름을 만든다. 이렇게 하면 Cilium 확장 정책을 사용하기 전에 Kubernetes 표준 정책으로 최소 통신 경계를 확인할 수 있다.
 
@@ -141,7 +141,7 @@ spec:
 kubectl apply -k manifests/labs/cilium-ebpf-observability
 ```
 
-### **Step 5: DNS/FQDN 기반 CiliumNetworkPolicy를 적용한다**
+### Step 5: DNS/FQDN 기반 CiliumNetworkPolicy를 적용한다
 
 외부 egress를 IP 대역이 아니라 FQDN 단위로 제어해야 하는 경우 `CiliumNetworkPolicy`의 `toFQDNs`를 사용할 수 있다.
 
@@ -178,7 +178,7 @@ spec:
 
 이 정책은 `web` Pod가 DNS proxy를 통해 FQDN을 확인하고, 예시로 `api.github.com:443`만 외부 egress 대상으로 허용하도록 구성한다.
 
-### **Step 6: HTTP L7 정책을 적용한다**
+### Step 6: HTTP L7 정책을 적용한다
 
 HTTP method/path 단위 통제가 필요한 경우 Cilium L7 정책을 사용한다.
 
@@ -209,7 +209,7 @@ spec:
 
 ## 검증 방법
 
-### **1. 취약 상태를 확인한다**
+### 1. 취약 상태를 확인한다
 
 적용 전에는 Cilium/Hubble 또는 Cilium 정책 리소스가 없거나, flow 관찰이 되지 않는 상태일 수 있다.
 
@@ -250,7 +250,7 @@ kubectl -n team-d exec "$POD" -- curl -I --max-time 5 https://example.com
 
 취약한 상태에서는 허용 여부를 설명할 정책과 flow 기록 없이 연결이 성공할 수 있다.
 
-### **2. Cilium/Hubble 설치 상태를 확인한다**
+### 2. Cilium/Hubble 설치 상태를 확인한다
 
 ```bash
 cilium status
@@ -269,7 +269,7 @@ Hubble UI는 다음 명령으로 연다.
 cilium hubble ui
 ```
 
-### **3. 정책 리소스가 적용되었는지 확인한다**
+### 3. 정책 리소스가 적용되었는지 확인한다
 
 ```bash
 kubectl get networkpolicy -n team-d
@@ -282,7 +282,7 @@ kubectl describe ciliumnetworkpolicy -n team-d
 - `default-deny-ingress`, `default-deny-egress`, `allow-dns-egress` 같은 표준 `NetworkPolicy`가 존재한다.
 - `allow-web-dns-and-github-fqdn-egress`, `allow-web-to-api-health-http` 같은 `CiliumNetworkPolicy`가 존재한다.
 
-### **4. Hubble에서 flow와 drop verdict를 확인한다**
+### 4. Hubble에서 flow와 drop verdict를 확인한다
 
 ```bash
 hubble observe --namespace team-d
@@ -296,7 +296,7 @@ hubble observe --namespace team-d --verdict DROPPED
 - 허용되지 않은 egress 또는 HTTP path는 `DROPPED` verdict로 관찰된다.
 - DNS 질의와 HTTP 요청이 flow 이벤트로 남는다.
 
-### **5. DNS/FQDN 정책을 검증한다**
+### 5. DNS/FQDN 정책을 검증한다
 
 ```bash
 WEB_POD=$(kubectl get pod -n team-d -l app.kubernetes.io/name=web -o jsonpath='{.items[0].metadata.name}')
@@ -311,7 +311,7 @@ kubectl exec -n team-d "$WEB_POD" -- curl -I --max-time 5 https://example.com
 - `https://example.com` 접근은 차단 또는 timeout된다.
 - Hubble에서 허용/차단 결과를 flow로 확인할 수 있다.
 
-### **6. HTTP L7 정책을 검증한다**
+### 6. HTTP L7 정책을 검증한다
 
 ```bash
 WEB_POD=$(kubectl get pod -n team-d -l app.kubernetes.io/name=web -o jsonpath='{.items[0].metadata.name}')
@@ -335,7 +335,7 @@ kubectl exec -n team-d "$WEB_POD" -- curl -X POST -i --max-time 5 http://api/hea
 
 반대로 무리하게 운영 클러스터의 CNI를 전환하면 pod 네트워크 장애, 정책 오탐, DNS 장애, L7 proxy 영향 같은 리스크가 생길 수 있다. 따라서 실습 환경에서 CNI chaining으로 검증하고, 운영 적용은 변경 창과 rollback 계획을 갖춘 상태에서 진행한다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -345,7 +345,20 @@ kubectl exec -n team-d "$WEB_POD" -- curl -X POST -i --max-time 5 http://api/hea
 | 도구 비용 | Cilium, Hubble은 오픈소스 사용 가능. 상용 지원이나 엔터프라이즈 기능은 별도 비용이 발생할 수 있다. |
 | 운영 비용 | CNI 변경 검토, 정책 튜닝, 장애 대응 runbook 관리 비용이 발생한다. |
 
-## Assessment 체크리스트
+## 참고 자료
+
+- [Cilium AWS CNI chaining](https://docs.cilium.io/en/stable/installation/cni-chaining-aws-cni/)
+- [Cilium network policy overview](https://docs.cilium.io/en/stable/security/policy/)
+- [Cilium DNS-based policies](https://docs.cilium.io/en/stable/security/dns.html)
+- [Cilium and Hubble documentation](https://docs.cilium.io/en/stable/index.html)
+
+
+## 연계된 보안 가이드라인 항목
+
+
+추후 업데이트 예정.
+
+## 적용 시 체크리스트
 
 - [ ] Cilium 배포 모델이 Amazon VPC CNI chaining인지 full replacement인지 명확히 문서화되어 있는가?
 - [ ] Hubble relay/UI가 활성화되어 있고 `hubble observe`로 Namespace 단위 flow를 조회할 수 있는가?
@@ -354,11 +367,3 @@ kubectl exec -n team-d "$WEB_POD" -- curl -X POST -i --max-time 5 http://api/hea
 - [ ] HTTP method/path 기반 L7 정책이 실제 요청에 반영되는가?
 - [ ] 허용/차단된 트래픽이 Hubble CLI 또는 UI에서 추적되는가?
 - [ ] 운영 적용 전 rollback 절차와 workload restart 영향이 검토되었는가?
-
-## 참고 자료
-
-- [Cilium AWS CNI chaining](https://docs.cilium.io/en/stable/installation/cni-chaining-aws-cni/)
-- [Cilium network policy overview](https://docs.cilium.io/en/stable/security/policy/)
-- [Cilium DNS-based policies](https://docs.cilium.io/en/stable/security/dns.html)
-- [Cilium and Hubble documentation](https://docs.cilium.io/en/stable/index.html)
-

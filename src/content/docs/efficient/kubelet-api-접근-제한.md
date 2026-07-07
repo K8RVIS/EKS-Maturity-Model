@@ -42,7 +42,7 @@ EKS 기본 구성에서는 노드가 EKS cluster security group을 공유하고,
 - Terraform으로 EKS 모듈과 infra 환경을 관리하고 있어야 한다.
 - metrics-server를 사용 중이라면 적용 후 `kubectl top` 동작을 함께 검증해야 한다.
 
-### **Step 1: 적용 전 kubelet API 노출 상태를 확인한다**
+### Step 1: 적용 전 kubelet API 노출 상태를 확인한다
 
 실습 환경 기준 변수는 다음처럼 둔다.
 
@@ -150,7 +150,7 @@ aws ec2 describe-security-groups \
 
 다만 cluster security group self rule이 있으면 같은 SG가 붙은 리소스 사이에서는 모든 포트가 허용될 수 있으므로, 이 실습에서는 노드 전용 SG로 kubelet 접근 경계를 명시화한다.
 
-### **Step 2: EKS 모듈에 노드 전용 보안 그룹을 만든다**
+### Step 2: EKS 모듈에 노드 전용 보안 그룹을 만든다
 
 EKS 모듈은 노드 보안 그룹을 생성하기 위해 VPC ID를 입력받는다.
 
@@ -197,7 +197,7 @@ resource "aws_security_group" "node" {
 }
 ```
 
-### **Step 3: kubelet HTTPS API는 cluster security group에서만 허용한다**
+### Step 3: kubelet HTTPS API는 cluster security group에서만 허용한다
 
 EKS Control Plane이 kubelet `10250`에 접근할 수 있도록, 노드 보안 그룹에는 cluster security group을 source로 하는 ingress만 추가한다.
 
@@ -265,7 +265,7 @@ resource "aws_security_group_rule" "node_egress" {
 }
 ```
 
-### **Step 4: managed node group Launch Template에 전용 SG를 연결한다**
+### Step 4: managed node group Launch Template에 전용 SG를 연결한다
 
 Launch Template에 노드 전용 보안 그룹을 연결한다.
 
@@ -314,7 +314,7 @@ output "node_security_group_id" {
 }
 ```
 
-### **Step 5: Terraform으로 적용한다**
+### Step 5: Terraform으로 적용한다
 
 먼저 테스트와 plan을 실행한다.
 
@@ -365,7 +365,7 @@ terraform -chdir=environments/infra apply tfplan
 
 ## 검증 방법
 
-### **1. 노드 그룹이 새 Launch Template을 사용하는지 확인한다**
+### 1. 노드 그룹이 새 Launch Template을 사용하는지 확인한다
 
 ```bash
 aws eks describe-nodegroup \
@@ -379,7 +379,7 @@ aws eks describe-nodegroup \
 
 기대 결과는 `status`가 `ACTIVE`이고 `health` issue가 없는 것이다.
 
-### **2. 실제 노드에 연결된 보안 그룹을 확인한다**
+### 2. 실제 노드에 연결된 보안 그룹을 확인한다
 
 ```bash
 ASG_NAME="$(aws eks describe-nodegroup \
@@ -407,7 +407,7 @@ aws ec2 describe-instances \
 
 노드에 새 전용 보안 그룹이 연결되어 있어야 한다.
 
-### **3. kubelet API 포트 규칙을 확인한다**
+### 3. kubelet API 포트 규칙을 확인한다
 
 ```bash
 NODE_SG_IDS="$(aws ec2 describe-instances \
@@ -448,7 +448,7 @@ aws ec2 describe-security-groups \
 []
 ```
 
-### **4. 클러스터 기능이 유지되는지 확인한다**
+### 4. 클러스터 기능이 유지되는지 확인한다
 
 kubelet 접근을 제한한 후에도 노드 상태와 metrics-server 기능은 유지되어야 한다.
 
@@ -470,7 +470,7 @@ kubectl -n kube-system get deploy metrics-server \
   -o jsonpath='{.spec.template.spec.containers[0].args}'
 ```
 
-### **5. 코드 레벨 회귀 테스트를 실행한다**
+### 5. 코드 레벨 회귀 테스트를 실행한다
 
 ```bash
 python -m unittest tests.test_kubelet_api_security
@@ -495,7 +495,7 @@ terraform fmt -check \
 - **운영 영향:** `10250`을 필요한 주체까지 차단하면 API Server의 logs/exec/port-forward, metrics-server 수집이 실패할 수 있다. 따라서 차단이 아니라 필요한 control plane 경로만 명시 허용해야 한다.
 - **심각도:** **높음** — kubelet API는 노드와 컨테이너 관리면에 가깝기 때문에 네트워크 노출을 최소화해야 한다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 | 항목 | 내용 |
 | --- | --- |
@@ -507,17 +507,6 @@ terraform fmt -check \
 
 운영 환경에서는 PodDisruptionBudget, 노드 그룹 desired capacity, 중요 워크로드 분산 상태를 확인한 뒤 node group update를 수행해야 한다. 실습 환경에서도 노드 교체 중 일시적으로 Pod가 재시작될 수 있다.
 
-## Assessment 체크리스트
-
-- [ ] 노드 보안 그룹에서 `10250`이 `0.0.0.0/0`, `::/0`, VPC/VPN 전체 CIDR로 열려 있지 않은가?
-- [ ] kubelet `10250` ingress source가 EKS cluster security group으로 제한되어 있는가?
-- [ ] kubelet read-only port `10255` ingress 규칙이 없는가?
-- [ ] 노드 전용 보안 그룹이 managed node group Launch Template에 연결되어 있는가?
-- [ ] 노드가 private EKS API endpoint `443`에 정상 접근할 수 있는가?
-- [ ] `kubectl logs`, `kubectl exec`, `kubectl top nodes`, `kubectl top pods`가 정상 동작하는가?
-- [ ] Terraform test와 Python 회귀 테스트가 kubelet API 보안 경계를 검증하는가?
-- [ ] 노드 그룹 업데이트 후 상태가 `ACTIVE`이고 health issue가 없는가?
-
 ## 참고 자료
 
 - [Amazon EKS security group requirements and considerations](https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)
@@ -527,3 +516,19 @@ terraform fmt -check \
 - [Kubernetes Kubelet authentication/authorization](https://kubernetes.io/docs/reference/access-authn-authz/kubelet-authn-authz/)
 - [Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
 
+
+## 연계된 보안 가이드라인 항목
+
+
+추후 업데이트 예정.
+
+## 적용 시 체크리스트
+
+- [ ] 노드 보안 그룹에서 `10250`이 `0.0.0.0/0`, `::/0`, VPC/VPN 전체 CIDR로 열려 있지 않은가?
+- [ ] kubelet `10250` ingress source가 EKS cluster security group으로 제한되어 있는가?
+- [ ] kubelet read-only port `10255` ingress 규칙이 없는가?
+- [ ] 노드 전용 보안 그룹이 managed node group Launch Template에 연결되어 있는가?
+- [ ] 노드가 private EKS API endpoint `443`에 정상 접근할 수 있는가?
+- [ ] `kubectl logs`, `kubectl exec`, `kubectl top nodes`, `kubectl top pods`가 정상 동작하는가?
+- [ ] Terraform test와 Python 회귀 테스트가 kubelet API 보안 경계를 검증하는가?
+- [ ] 노드 그룹 업데이트 후 상태가 `ACTIVE`이고 health issue가 없는가?

@@ -37,7 +37,7 @@ Public endpoint를 VPN egress IP `/32`로 제한하면 인터넷 전체 노출�
   - DHCP options에서 `AmazonProvidedDNS` 사용
 - public endpoint를 끄기 전에, 운영자와 자동화 도구가 VPC 내부 또는 연결망에서 API Server에 접근할 수 있는지 검증해야 한다.
 
-### **Step 1: 적용 전 public endpoint 노출 상태를 확인한다**
+### Step 1: 적용 전 public endpoint 노출 상태를 확인한다
 
 ```bash
 export AWS_PROFILE=eks-security-infra
@@ -82,7 +82,7 @@ curl -sk --connect-timeout 5 \
 
 `200 <public-ip>`처럼 응답하면, 허용된 VPN egress IP에서 public API endpoint까지 네트워크 도달이 가능한 상태다.
 
-### **Step 2: EKS API endpoint를 private-only로 전환한다**
+### Step 2: EKS API endpoint를 private-only로 전환한다
 
 Terraform EKS 모듈에서 public endpoint를 끄고 private endpoint만 남긴다.
 
@@ -102,7 +102,7 @@ resource "aws_eks_cluster" "this" {
 
 public endpoint를 사용하지 않으므로 `cluster_public_access_cidrs`, `public_access_cidrs` 입력도 제거한다. 이 값은 public endpoint가 켜져 있을 때만 의미가 있다.
 
-### **Step 3: VPN VPC CIDR에서 EKS private endpoint TCP 443 접근을 허용한다**
+### Step 3: VPN VPC CIDR에서 EKS private endpoint TCP 443 접근을 허용한다
 
 EKS private endpoint는 EKS cluster security group의 ingress rule로 접근을 제어한다. VPN VPC CIDR에서 Kubernetes API Server HTTPS 포트로 들어오는 트래픽을 허용한다.
 
@@ -136,7 +136,7 @@ cluster_private_endpoint_access_cidrs = [
 
 VPN EC2가 Tailscale exit node 또는 subnet router처럼 동작한다면, 트래픽이 `172.31.9.218` 또는 VPN VPC CIDR 내부 주소로 SNAT되어 EKS VPC에 들어와야 한다. source IP가 Tailscale overlay 대역(`100.64.0.0/10`)으로 유지되면 EKS cluster security group과 VPC Peering 경로에서 막힐 수 있다.
 
-### **Step 4: EKS VPC와 VPN VPC를 VPC Peering으로 연결한다**
+### Step 4: EKS VPC와 VPN VPC를 VPC Peering으로 연결한다
 
 `eks-secure-infra`에서는 EKS VPC를 매번 삭제 후 재생성할 수 있으므로, peering과 route도 Terraform으로 함께 생성한다. 별도 `vpc-peering` 모듈을 만들어 requester는 EKS VPC, accepter는 기존 VPN VPC로 둔다.
 
@@ -258,7 +258,7 @@ tailscale status --json \
 
 ## 검증 방법
 
-### **1. Terraform 테스트를 실행한다**
+### 1. Terraform 테스트를 실행한다
 
 ```bash
 terraform -chdir=modules/eks test
@@ -275,7 +275,7 @@ Success! 1 passed, 0 failed.
 Success! The configuration is valid.
 ```
 
-### **2. Terraform plan으로 변경 내용을 확인한다**
+### 2. Terraform plan으로 변경 내용을 확인한다
 
 ```bash
 AWS_PROFILE=eks-security-infra \
@@ -304,7 +304,7 @@ aws_route accepter_to_requester
   destination_cidr_block = 10.0.0.0/16
 ```
 
-### **3. EKS endpoint 설정을 확인한다**
+### 3. EKS endpoint 설정을 확인한다
 
 ```bash
 aws eks describe-cluster \
@@ -332,7 +332,7 @@ aws eks describe-cluster \
 
 `endpointPublicAccess = false`이면 `publicAccessCidrs`에 과거 값이 남아 있어도 public endpoint 접근에는 사용되지 않는다. 판단 기준은 public endpoint 활성화 여부다.
 
-### **4. VPC Peering과 route를 확인한다**
+### 4. VPC Peering과 route를 확인한다
 
 ```bash
 aws ec2 describe-vpc-peering-connections \
@@ -407,7 +407,7 @@ aws ec2 describe-security-groups \
 ]
 ```
 
-### **6. 운영자 단말에서 private endpoint DNS와 라우팅을 확인한다**
+### 6. 운영자 단말에서 private endpoint DNS와 라우팅을 확인한다
 
 ```bash
 ENDPOINT_HOST=$(aws eks describe-cluster \
@@ -439,7 +439,7 @@ Tailscale을 사용한 실습 환경에서는 `utun` 인터페이스로 나가�
 interface: utun7
 ```
 
-### **7. private endpoint 도달성을 확인한다**
+### 7. private endpoint 도달성을 확인한다
 
 ```bash
 ENDPOINT=$(aws eks describe-cluster \
@@ -462,7 +462,7 @@ curl -sk --connect-timeout 5 \
 
 이 결과는 Kubernetes API Server의 `/readyz`가 private IP를 통해 응답했다는 뜻이다. 즉 public endpoint가 아니라 VPN/peering/private endpoint 경로로 API Server에 도달한 것이다.
 
-### **8. kubectl 인증 포함 검증을 수행한다**
+### 8. kubectl 인증 포함 검증을 수행한다
 
 ```bash
 aws eks update-kubeconfig \
@@ -490,7 +490,7 @@ private-only 전환에도 운영 리스크가 있다.
 - GitOps/CI 도구가 public endpoint에 의존하고 있었다면 배포 파이프라인이 중단될 수 있다.
 - VPC를 삭제 후 재생성하는 실습 환경에서는 peering과 route도 함께 재생성되도록 IaC에 포함해야 한다.
 
-## 인적 리소스 및 비용
+## 발생 비용
 
 - AWS 추가 비용: VPC Peering 자체는 시간당 비용이 없지만, AZ 간/리전 간 데이터 전송 비용이 발생할 수 있다.
 - 운영 비용: VPN EC2 또는 exit node 운영 비용이 발생한다. 기존 VPN EC2를 사용하면 추가 인스턴스 비용은 없다.
@@ -505,7 +505,12 @@ private-only 전환에도 운영 리스크가 있다.
 - [Tailscale subnet routers](https://tailscale.com/kb/1019/subnets)
 - [Tailscale exit nodes](https://tailscale.com/kb/1103/exit-nodes)
 
-## Assessment 체크리스트
+## 연계된 보안 가이드라인 항목
+
+
+추후 업데이트 예정.
+
+## 적용 시 체크리스트
 
 - [ ] EKS cluster의 `endpointPublicAccess`가 `false`인가?
 - [ ] EKS cluster의 `endpointPrivateAccess`가 `true`인가?
