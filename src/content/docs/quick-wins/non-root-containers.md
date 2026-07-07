@@ -3,8 +3,6 @@ title: "컨테이너를 non-root 사용자로 실행하고 루트 파일시스�
 description: "컨테이너 이미지는 별도 설정이 없으면 root 사용자로 실행되는 경우가 많다. 컨테이너 런타임과 커널 격리가 있더라도, 컨테이너 내부 프로세스가 UID 0 권한을 가지면 침해 사고가 발생했을 때 피해 범위가 커진다."
 phase: "Quick Wins"
 domain: "Pod 보안"
-difficulty: "★☆☆"
-owner: "공통 (전체 실습)"
 order: 60
 sidebar:
   order: 60

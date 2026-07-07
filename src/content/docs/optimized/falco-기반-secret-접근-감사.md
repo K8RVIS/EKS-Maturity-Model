@@ -3,8 +3,6 @@ title: "Falco 기반 Secret 접근 감사를 보완한다"
 description: "Efficient 단계의 Secret 접근 감사는 EKS audit log와 CloudTrail을 사용해 Kubernetes API 또는 AWS API 기반 Secret 접근을 추적한다. 이 방식은 `kubectl get secret`, controller의 Secre"
 phase: "Optimized"
 domain: "데이터 보호"
-difficulty: "★★★"
-owner: "공통 (전체 실습)"
 order: 40
 sidebar:
   order: 40

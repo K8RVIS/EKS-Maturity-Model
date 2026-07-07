@@ -3,8 +3,6 @@ title: "Security Metric 수집 및 Runtime 시각화를 구축한다"
 description: "**Grafana 메트릭 시각화** 단계에서 Grafana를 연결했지만, 기본 대시보드는 범용 인프라 메트릭을 보여줄 뿐이다. 보안 관점에서 실제로 의미 있는 질문은 다르다."
 phase: "Efficient"
 domain: "Pod 보안"
-difficulty: "★★★"
-owner: "장해윤"
 order: 70
 sidebar:
   order: 70

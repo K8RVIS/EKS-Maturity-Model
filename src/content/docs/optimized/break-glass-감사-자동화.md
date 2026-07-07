@@ -3,8 +3,6 @@ title: "Break-glass 감사 자동화를 통해 긴급 관리자 접근을 JIT로
 description: "Break-glass 접근은 장애 대응이나 긴급 보안 조치처럼 평상시 권한으로는 해결하기 어려운 상황에서 사용하는 예외적 관리자 접근이다. 하지만 break-glass Role을 상시 관리자 권한으로 열어두면 권한 오남용, 계정 탈취, 추적 누락 위험이 커진다."
 phase: "Optimized"
 domain: "접근 제어"
-difficulty: "미정"
-owner: "공통 (전체 실습)"
 order: 10
 sidebar:
   order: 10

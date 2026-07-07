@@ -3,8 +3,6 @@ title: "Container Image Scan 및 차단을 한다"
 description: "컨테이너 이미지는 OS 패키지, 언어 런타임, 애플리케이션 의존성, 빌드 산출물, 설정 파일이 함께 들어 있는 복합 아티팩트다. 이 중 하나라도 알려진 CVE를 포함하면 해당 이미지를 기반으로 실행되는 모든 Pod가 같은 취약점을 공유한다."
 phase: "Quick Wins"
 domain: "Pod 보안"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 50
 sidebar:
   order: 50

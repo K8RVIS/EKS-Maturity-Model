@@ -3,8 +3,6 @@ title: "K8s 인증서 수명주기를 자동화한다"
 description: "EKS에서 외부 사용자가 애플리케이션에 접근할 때 TLS 인증서는 ALB, NLB, Ingress Controller, CloudFront 같은 진입점에서 서비스 신뢰와 전송 중 데이터 보호를 담당한다. 인증서 자체는 AWS Certificate Manager(ACM)"
 phase: "Optimized"
 domain: "데이터 보호"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 50
 sidebar:
   order: 50

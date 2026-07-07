@@ -3,8 +3,6 @@ title: "네임스페이스에 PSS Baseline을 적용하고 비준수 Pod 실행�
 description: "Kubernetes Pod Security Standards(PSS)는 Pod의 보안 수준을 세 단계(Privileged, Baseline, Restricted)로 정의하는 내장 정책 프레임워크다. PSS는 Admission Controller가 Pod 생성·수정 요청"
 phase: "Foundational"
 domain: "Pod 보안"
-difficulty: "★☆☆"
-owner: "공통 (전체 실습)"
 order: 100
 sidebar:
   order: 100

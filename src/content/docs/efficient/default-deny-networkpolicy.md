@@ -3,8 +3,6 @@ title: "기본 deny NetworkPolicy를 적용한다"
 description: "Kubernetes는 기본적으로 같은 클러스터 안의 Pod 간 통신을 넓게 허용한다. Namespace가 나뉘어 있어도 NetworkPolicy가 없으면 취약한 Pod에서 다른 서비스, 내부 API, 데이터 저장소로 접근을 시도할 수 있다. 이 상태에서는 웹 Pod 하"
 phase: "Efficient"
 domain: "네트워크 보안"
-difficulty: "미정"
-owner: "공통 (전체 실습)"
 order: 10
 sidebar:
   order: 10

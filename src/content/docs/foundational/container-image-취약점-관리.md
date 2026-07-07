@@ -3,8 +3,6 @@ title: "Container Image 취약점을 관리한다"
 description: "**Container Image 스캔 및 차단**(ECR 향상된 스캔 + Inspector CONTINUOUS_SCAN)은 취약점을 자동으로 탐지하지만, 발견된 모든 CVE가 실제 운영 환경에서 exploit 가능한 위협은 아니다."
 phase: "Foundational"
 domain: "Pod 보안"
-difficulty: "★★☆"
-owner: "장해윤"
 order: 80
 sidebar:
   order: 80

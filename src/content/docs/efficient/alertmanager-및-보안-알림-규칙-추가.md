@@ -3,8 +3,6 @@ title: "AlertManager 및 보안 알림 규칙을 추가한다"
 description: "**보안 메트릭 대시보드 구성** 단계에서 구성한 대시보드는 운영자가 직접 화면을 보고 있어야 이상 징후를 인식할 수 있다. 하지만 보안 이벤트는 새벽, 주말, 휴가 중에도 발생한다. 대시보드만으로는 실시간 대응이 불가능하다."
 phase: "Efficient"
 domain: "Pod 보안"
-difficulty: "★★☆"
-owner: "장해윤"
 order: 50
 sidebar:
   order: 50

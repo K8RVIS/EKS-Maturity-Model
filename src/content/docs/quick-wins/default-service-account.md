@@ -3,8 +3,6 @@ title: "Default ServiceAccount 사용을 제한하고 불필요한 토큰 마운
 description: "Kubernetes에서 `ServiceAccount(SA)`는 Pod가 Kubernetes API 서버에 자신을 인증할 때 사용하는 워크로드용 계정이다. 사람 사용자가 로그인할 때 쓰는 IAM User나 Kubernetes 사용자와 달리, SA는 클러스터 안에서 실행되"
 phase: "Quick Wins"
 domain: "접근 제어"
-difficulty: "★☆☆"
-owner: "공통 (전체 실습)"
 order: 10
 sidebar:
   order: 10

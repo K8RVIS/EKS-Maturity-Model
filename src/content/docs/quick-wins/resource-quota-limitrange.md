@@ -3,8 +3,6 @@ title: "Cluster Resource 사용을 제한한다"
 description: "Kubernetes 클러스터는 여러 팀과 서비스가 같은 노드 풀, API 서버, 스케줄러, kubelet 자원을 공유한다. 특정 Pod가 CPU를 과도하게 사용하거나 메모리 누수로 계속 확장되면 해당 Pod만 느려지는 것이 아니라 같은 노드의 다른 Pod까지 지연, 재"
 phase: "Quick Wins"
 domain: "Pod 보안"
-difficulty: "★☆☆"
-owner: "공통 (전체 실습)"
 order: 40
 sidebar:
   order: 40

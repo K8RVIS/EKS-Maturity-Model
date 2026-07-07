@@ -3,8 +3,6 @@ title: "EKS 클러스터에 접속할 IAM 신분을 EKS Access Entries 방식으
 description: "EKS 클러스터에 접속하는 IAM 사용자 또는 IAM 역할은 Kubernetes API 서버에서 인증된 주체로 매핑되어야 한다. 기존에는 이 매핑을 `aws-auth` ConfigMap에 직접 작성하는 방식이 일반적이었다."
 phase: "Foundational"
 domain: "접근 제어"
-difficulty: "미정"
-owner: "공통 (전체 실습)"
 order: 20
 sidebar:
   order: 20

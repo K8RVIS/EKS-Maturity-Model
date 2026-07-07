@@ -3,8 +3,6 @@ title: "Container System Call 제어"
 description: "Linux 커널은 300개 이상의 시스템 콜(syscall)을 제공한다. `RuntimeDefault` seccomp 프로파일은 이 중 위험도가 높은 일부만 차단하지만, 실제 서비스가 사용하지 않는 수백 개의 syscall을 여전히 허용한다."
 phase: "Optimized"
 domain: "Pod 보안"
-difficulty: "★★★"
-owner: "장해윤"
 order: 60
 sidebar:
   order: 60

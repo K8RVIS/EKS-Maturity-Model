@@ -3,8 +3,6 @@ title: "Runtime 위협탐지"
 description: "Seccomp 프로파일은 허용되지 않은 syscall을 **사전에 차단**하는 자물쇠 역할을 한다. 하지만 허용된 syscall 범위 안에서 공격자가 수행하는 행위는 Seccomp만으로 탐지할 수 없다. 예를 들어 컨테이너 내에서 셸을 실행하거나, `/etc/passw"
 phase: "Optimized"
 domain: "Pod 보안"
-difficulty: "★★★"
-owner: "장해윤"
 order: 70
 sidebar:
   order: 70

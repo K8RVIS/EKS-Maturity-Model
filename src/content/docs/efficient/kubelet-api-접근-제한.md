@@ -3,8 +3,6 @@ title: "kubelet API 접근을 노드 보안 그룹 경계로 제한한다"
 description: "kubelet은 각 Worker Node에서 실행되는 Kubernetes 에이전트다. API Server에서 할당된 Pod를 실행하고, containerd 같은 컨테이너 런타임과 통신하며, Node와 Pod 상태를 API Server에 보고한다. 또한 `kubectl "
 phase: "Efficient"
 domain: "네트워크 보안"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 30
 sidebar:
   order: 30

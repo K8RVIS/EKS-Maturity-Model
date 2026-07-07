@@ -3,8 +3,6 @@ title: "서비스 간 mTLS를 적용한다"
 description: "Ingress 또는 Load Balancer에서 TLS를 강제해도 클러스터 내부 Pod 간 통신은 여전히 평문일 수 있다. 공격자가 취약한 Pod, 노드, 디버그 컨테이너, 과도한 권한의 DaemonSet을 확보하면 같은 클러스터 내부의 east-west 트래픽을 관찰"
 phase: "Optimized"
 domain: "네트워크 보안"
-difficulty: "★★★"
-owner: "공통 (전체 실습)"
 order: 20
 sidebar:
   order: 20

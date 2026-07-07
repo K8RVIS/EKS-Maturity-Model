@@ -3,8 +3,6 @@ title: "Workload 내 Hardcoded Secret을 탐지하고 Secrets Manager 참조로 
 description: "Kubernetes 매니페스트, Kustomize patch, Helm values, Terraform 변수 파일, 애플리케이션 설정 파일, CI/CD 변수에 비밀번호나 토큰을 직접 적어두면 Git 히스토리, Argo CD diff, CI 로그, 이미지 레이어에 값이 "
 phase: "Foundational"
 domain: "데이터 보호"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 70
 sidebar:
   order: 70

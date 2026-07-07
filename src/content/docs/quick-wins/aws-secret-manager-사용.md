@@ -3,8 +3,6 @@ title: "Pod 연계 external Secret storage를 사용한다"
 description: "애플리케이션 코드, 컨테이너 이미지, Helm values, Kubernetes 매니페스트, CI/CD 변수에 비밀번호, 토큰, API Key 같은 시크릿 값이 직접 들어가 있으면 한 번의 커밋이나 이미지 빌드만으로 장기간 노출이 지속된다. Git 히스토리, 이미지 레"
 phase: "Quick Wins"
 domain: "데이터 보호"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 30
 sidebar:
   order: 30

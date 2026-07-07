@@ -3,8 +3,6 @@ title: "Ingress와 Load Balancer에서 TLS를 강제한다"
 description: "외부 사용자와 EKS 클러스터 경계 사이의 트래픽은 가장 먼저 암호화해야 하는 구간이다. Ingress나 Load Balancer가 HTTP만 허용하면 로그인 정보, 세션 쿠키, API 토큰, 개인정보가 네트워크 구간에서 평문으로 노출될 수 있고, 중간자 공격을 통해 "
 phase: "Quick Wins"
 domain: "네트워크 보안"
-difficulty: "미정"
-owner: "공통 (전체 실습)"
 order: 20
 sidebar:
   order: 20

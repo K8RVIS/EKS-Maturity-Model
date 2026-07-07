@@ -3,8 +3,6 @@ title: "Grafana로 클러스터 메트릭을 시각화한다"
 description: "**Prometheus 메트릭 수집 기반 구성** 단계에서 Prometheus가 메트릭을 수집하더라도, 숫자로만 나열된 시계열 데이터는 사람이 빠르게 판단하기 어렵다. 보안 이상 징후는 수치의 변화 패턴에서 드러나는 경우가 많다. API 서버 4xx 오류가 갑자기 급증"
 phase: "Foundational"
 domain: "Pod 보안"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 90
 sidebar:
   order: 90

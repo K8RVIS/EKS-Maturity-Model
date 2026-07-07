@@ -3,8 +3,6 @@ title: "eBPF 기반 네트워크 이상 행위 탐지를 활성화한다"
 description: "Kubernetes의 표준 `NetworkPolicy`는 기본적으로 L3/L4 수준의 허용/차단에 초점을 둔다. 이 방식은 서비스 간 통신 경로를 제한하는 데 효과적이지만, 운영 중 사고가 발생했을 때 “어떤 Pod가 어느 서비스로 어떤 프로토콜과 경로를 사용해 통신했"
 phase: "Optimized"
 domain: "네트워크 보안"
-difficulty: "★★★"
-owner: "공통 (전체 실습)"
 order: 30
 sidebar:
   order: 30

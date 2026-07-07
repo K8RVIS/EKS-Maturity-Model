@@ -3,8 +3,6 @@ title: "EBS 기반 Workload Storage data를 보호한다"
 description: "EKS에서 애플리케이션 데이터는 컨테이너 파일시스템에만 머무르지 않는다. Redis, PostgreSQL, 메시지 큐, 업로드 파일, 캐시 데이터처럼 지속성이 필요한 데이터는 `PersistentVolumeClaim(PVC)`을 통해 EBS, EFS 같은 외부 스토리지"
 phase: "Foundational"
 domain: "데이터 보호"
-difficulty: "★☆☆"
-owner: "남윤겸, 최은소"
 order: 60
 sidebar:
   order: 60

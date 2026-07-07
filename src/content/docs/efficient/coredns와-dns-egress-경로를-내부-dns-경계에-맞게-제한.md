@@ -3,8 +3,6 @@ title: "CoreDNS와 DNS egress 경로를 내부 DNS 경계에 맞게 제한한다
 description: "Kubernetes 내부의 서비스 디스커버리는 DNS에 크게 의존한다. Pod는 보통 `api.team-a.svc.cluster.local`, `kubernetes.default.svc.cluster.local` 같은 이름을 질의하고, kubelet이 주입한 `/etc"
 phase: "Efficient"
 domain: "네트워크 보안"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 20
 sidebar:
   order: 20

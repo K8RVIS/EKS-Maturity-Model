@@ -3,8 +3,6 @@ title: "Secret 접근을 감사하고 추적한다"
 description: "Kubernetes Secret과 AWS Secrets Manager는 민감정보를 코드와 매니페스트에서 분리하기 위한 핵심 저장소다. 하지만 Secret 저장 위치를 안전하게 바꾸는 것만으로는 충분하지 않다. 누가 언제 어떤 Secret을 조회했는지 추적할 수 없으면 "
 phase: "Efficient"
 domain: "데이터 보호"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 40
 sidebar:
   order: 40

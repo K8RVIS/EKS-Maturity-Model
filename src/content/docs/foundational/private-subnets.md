@@ -3,8 +3,6 @@ title: "Worker node와 Pod를 private subnet에 배치한다"
 description: "EKS Worker node는 실제 Pod가 실행되는 데이터 플레인이다. Worker node가 Public Subnet에 배치되거나 Public IP를 직접 가지면 인터넷에서 노드의 네트워크 경계까지 도달할 수 있는 공격면이 생긴다. 인증, Security Group"
 phase: "Foundational"
 domain: "네트워크 보안"
-difficulty: "미정"
-owner: "공통 (전체 실습)"
 order: 50
 sidebar:
   order: 50

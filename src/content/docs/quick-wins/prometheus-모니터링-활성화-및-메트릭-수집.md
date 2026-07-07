@@ -3,8 +3,6 @@ title: "Prometheus로 클러스터 메트릭 수집 기반을 구성한다"
 description: "클러스터에서 무슨 일이 일어나고 있는지 데이터 없이 파악하는 것은 불가능하다. 공격자가 Pod를 남용하거나, 잘못된 배포가 노드 자원을 잠식하거나, 서비스 계정이 비정상적인 API 호출을 반복해도, 메트릭 수집이 없으면 이를 인지하는 시점은 장애가 발생한 뒤가 된다."
 phase: "Quick Wins"
 domain: "Pod 보안"
-difficulty: "★★☆"
-owner: "공통 (전체 실습)"
 order: 70
 sidebar:
   order: 70

@@ -3,8 +3,6 @@ title: "네임스페이스 내 리소스 접근 제어를 위한 RBAC 정의 및
 description: "RBAC(Role-Based Access Control)는 Kubernetes 클러스터 내부의 사용자, 그룹, ServiceAccount, Pod가 Kubernetes 리소스에 대해 어떤 작업을 수행할 수 있는지 정의하는 권한 제어 체계이다."
 phase: "Foundational"
 domain: "접근 제어"
-difficulty: "미정"
-owner: "공통 (전체 실습)"
 order: 10
 sidebar:
   order: 10
