@@ -124,9 +124,9 @@ HTTP 모드(`node server.mjs`, 세션 기반 Streamable HTTP)를 Inspector로 �
 ## 참고 자료
 
 - [Model Context Protocol 공식 사이트](https://modelcontextprotocol.io) 
-- [MCP TypeScript SDK 저장소](https://github.com/modelcontextprotocol/typescript-sdk) — `@modelcontextprotocol/sdk` (v1, 이 프로젝트가 쓰는 정식 버전) 소스
-  - [`src/examples/server/simpleStreamableHttp.ts`](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/src/examples/server/simpleStreamableHttp.ts) — `server.mjs`의 세션 관리(`transports{}`, `mcp-session-id`, `isInitializeRequest`) 구조를 그대로 참고한 공식 예제
-- [npm: `@modelcontextprotocol/sdk`](https://www.npmjs.com/package/@modelcontextprotocol/sdk) — 현재 1.29.0, 정식 릴리스
-- [npm: `@modelcontextprotocol/server`](https://www.npmjs.com/package/@modelcontextprotocol/server) / [`@modelcontextprotocol/express`](https://www.npmjs.com/package/@modelcontextprotocol/express) — 차세대 v2 SDK, 아직 2.0.0-beta.2라 이번엔 채택하지 않음
-- [Zod](https://zod.dev) — `inputSchema` 검증에 사용
-- `../skills/eks-maturity-advisor/SKILL.md` — MCP 서버가 감싸고 있는 원본 스캐너 로직/규칙 문서
+- [MCP TypeScript SDK 저장소](https://github.com/modelcontextprotocol/typescript-sdk) — `@modelcontextprotocol/sdk` 
+- [`src/examples/server/simpleStreamableHttp.ts`](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/src/examples/server/simpleStreamableHttp.ts) 
+- [npm: `@modelcontextprotocol/sdk`](https://www.npmjs.com/package/@modelcontextprotocol/sdk) 
+- [npm: `@modelcontextprotocol/server`](https://www.npmjs.com/package/@modelcontextprotocol/server) / [`@modelcontextprotocol/express`](https://www.npmjs.com/package/@modelcontextprotocol/express) 
+- [Zod](https://zod.dev)
+- `../skills/eks-maturity-advisor/SKILL.md` : MCP 서버가 감싸고 있는 원본 스캐너 로직/규칙 문서
